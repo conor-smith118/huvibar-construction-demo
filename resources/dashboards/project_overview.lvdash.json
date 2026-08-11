@@ -1,0 +1,397 @@
+{
+  "pages": [
+    {
+      "displayName": "Project Overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "counter_active_projects",
+            "title": "Active Projects",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "active_projects_count",
+                  "fields": [
+                    {
+                      "fieldName": "count",
+                      "displayAs": "COUNT"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count",
+                  "displayName": "Active Projects"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "counter_total_contract_value",
+            "title": "Total Contract Value",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "total_contract_value",
+                  "fields": [
+                    {
+                      "fieldName": "total_value",
+                      "displayAs": "TOTAL VALUE"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_value",
+                  "displayName": "Total Contract Value",
+                  "numberFormat": {
+                    "type": "currency",
+                    "currency": "USD",
+                    "compact": true
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "counter_open_rfis",
+            "title": "Open RFIs",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "open_rfis_count",
+                  "fields": [
+                    {
+                      "fieldName": "count",
+                      "displayAs": "COUNT"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count",
+                  "displayName": "Open RFIs"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 1,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "counter_overdue_submittals",
+            "title": "Overdue Submittals",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "overdue_submittals",
+                  "fields": [
+                    {
+                      "fieldName": "count",
+                      "displayAs": "COUNT"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count",
+                  "displayName": "Overdue Submittals"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 5,
+            "y": 0,
+            "width": 1,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_projects_by_type",
+            "title": "Projects by Type",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "projects_by_type",
+                  "fields": [
+                    {
+                      "fieldName": "project_type",
+                      "displayAs": "Project Type"
+                    },
+                    {
+                      "fieldName": "count",
+                      "displayAs": "Count"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "project_type",
+                  "displayName": "Project Type",
+                  "axis": {
+                    "title": "Project Type"
+                  }
+                },
+                "y": {
+                  "fieldName": "count",
+                  "displayName": "Count",
+                  "axis": {
+                    "title": "Number of Projects"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_open_rfis_by_project",
+            "title": "Open RFIs by Project",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "open_rfis_by_project",
+                  "fields": [
+                    {
+                      "fieldName": "project_name",
+                      "displayAs": "Project"
+                    },
+                    {
+                      "fieldName": "open_rfis",
+                      "displayAs": "Open RFIs"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "project_name",
+                  "displayName": "Project",
+                  "axis": {
+                    "title": "Project"
+                  }
+                },
+                "y": {
+                  "fieldName": "open_rfis",
+                  "displayName": "Open RFIs",
+                  "axis": {
+                    "title": "Open RFIs"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 3,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "table_project_list",
+            "title": "All Projects",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "project_list",
+                  "fields": [
+                    {"fieldName": "project_name", "displayAs": "Project Name"},
+                    {"fieldName": "project_type", "displayAs": "Type"},
+                    {"fieldName": "contract_value", "displayAs": "Contract Value"},
+                    {"fieldName": "status", "displayAs": "Status"},
+                    {"fieldName": "project_manager", "displayAs": "PM"},
+                    {"fieldName": "superintendent", "displayAs": "Super"},
+                    {"fieldName": "start_date", "displayAs": "Start Date"},
+                    {"fieldName": "projected_end_date", "displayAs": "End Date"},
+                    {"fieldName": "percent_complete", "displayAs": "% Complete"}
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "project_name", "displayName": "Project Name"},
+                  {"fieldName": "project_type", "displayName": "Type"},
+                  {"fieldName": "contract_value", "displayName": "Contract Value", "numberFormat": {"type": "currency", "currency": "USD"}},
+                  {"fieldName": "status", "displayName": "Status"},
+                  {"fieldName": "project_manager", "displayName": "PM"},
+                  {"fieldName": "superintendent", "displayName": "Super"},
+                  {"fieldName": "start_date", "displayName": "Start Date"},
+                  {"fieldName": "projected_end_date", "displayName": "End Date"},
+                  {"fieldName": "percent_complete", "displayName": "% Complete", "numberFormat": {"type": "percent"}}
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "line_projects_started_by_quarter",
+            "title": "Projects Started by Quarter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "projects_started_by_quarter",
+                  "fields": [
+                    {"fieldName": "quarter", "displayAs": "Quarter"},
+                    {"fieldName": "projects_started", "displayAs": "Projects Started"}
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "quarter",
+                  "displayName": "Quarter",
+                  "axis": {"title": "Quarter"}
+                },
+                "y": {
+                  "fieldName": "projects_started",
+                  "displayName": "Projects Started",
+                  "axis": {"title": "Projects Started"}
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 16,
+            "width": 6,
+            "height": 5
+          }
+        }
+      ],
+      "datasets": [
+        {
+          "name": "active_projects_count",
+          "displayName": "Active Projects Count",
+          "query": "SELECT COUNT(*) as count FROM ${var.catalog}.project_tracking.projects WHERE status = 'active'"
+        },
+        {
+          "name": "total_contract_value",
+          "displayName": "Total Contract Value",
+          "query": "SELECT SUM(contract_value) as total_value FROM ${var.catalog}.project_tracking.projects WHERE status IN ('active', 'closeout')"
+        },
+        {
+          "name": "open_rfis_count",
+          "displayName": "Open RFIs Count",
+          "query": "SELECT COUNT(*) as count FROM ${var.catalog}.project_tracking.rfis WHERE status = 'open'"
+        },
+        {
+          "name": "overdue_submittals",
+          "displayName": "Overdue Submittals",
+          "query": "SELECT COUNT(*) as count FROM ${var.catalog}.project_tracking.submittals WHERE status IN ('pending','revise_resubmit') AND required_date < current_date()"
+        },
+        {
+          "name": "projects_by_type",
+          "displayName": "Projects by Type",
+          "query": "SELECT project_type, COUNT(*) as count, SUM(contract_value) as total_value FROM ${var.catalog}.project_tracking.projects GROUP BY project_type"
+        },
+        {
+          "name": "project_list",
+          "displayName": "Project List",
+          "query": "SELECT p.project_name, p.project_type, p.contract_value, p.status, p.project_manager, p.superintendent, p.start_date, p.projected_end_date, p.percent_complete FROM ${var.catalog}.project_tracking.projects p ORDER BY p.contract_value DESC"
+        },
+        {
+          "name": "open_rfis_by_project",
+          "displayName": "Open RFIs by Project",
+          "query": "SELECT p.project_name, COUNT(r.rfi_id) as open_rfis, MAX(r.days_open) as max_days_open FROM ${var.catalog}.project_tracking.rfis r JOIN ${var.catalog}.project_tracking.projects p ON r.project_id = p.project_id WHERE r.status = 'open' GROUP BY p.project_name ORDER BY open_rfis DESC"
+        },
+        {
+          "name": "projects_started_by_quarter",
+          "displayName": "Projects Started by Quarter",
+          "query": "SELECT date_trunc('quarter', start_date) as quarter, COUNT(*) as projects_started, SUM(contract_value) as total_value FROM ${var.catalog}.project_tracking.projects GROUP BY quarter ORDER BY quarter"
+        }
+      ]
+    }
+  ]
+}

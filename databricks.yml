@@ -1,0 +1,28 @@
+bundle:
+  name: huvibar-construction-demo
+
+variables:
+  catalog:
+    description: Unity Catalog catalog name
+    default: css_genie
+  warehouse_id:
+    description: SQL warehouse ID for dashboard & Genie deployment
+    default: f5a185ab7f9f1e9f
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://adb-7405605962645785.5.azuredatabricks.net
+
+  prod:
+    mode: production
+    workspace:
+      host: https://adb-7405605962645785.5.azuredatabricks.net
+
+include:
+  - resources/jobs/*.yml
+  - resources/genie_spaces/*.yml
+  - resources/dashboards/*.yml
+  - resources/apps/*.yml

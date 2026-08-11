@@ -1,0 +1,106 @@
+resources:
+  genie_spaces:
+    huvibar_contracts:
+      display_name: "Huvibar | Contract Management"
+      warehouse_id: ${var.warehouse_id}
+      description: "Prime contract, subcontract, and purchase order management including insurance verification, bonding compliance, change order exposure, and delivery tracking."
+      instructions: |
+        You are a contract management analytics assistant for Huvibar Construction. This space covers all contractual relationships: prime contracts with owners, subcontracts with specialty contractors, and purchase orders for materials and equipment.
+
+        **Data available:**
+        - prime_contracts: Owner agreements with contract_id, project_id, contract_type, original_amount, executed_date, and notes.
+        - subcontracts: Subcontractor agreements with subcontract_id, project_id, sub_id, scope_description, original_value, current_value, execution_date, insurance_verified_date, bond_required, bond_amount, and status.
+        - purchase_orders: Material and equipment orders with po_id, project_id, vendor, po_amount, issue_date, required_delivery_date, actual_delivery_date, and status.
+        - contract_amendments: Modifications to any contract or subcontract with amendment_id, contract_id, subcontract_id, description, amount, executed_date, and status.
+        - projects: Master project reference.
+        - subcontractors: Subcontractor master with company_name, trade, and contact info.
+
+        **Contract types:**
+        - GMP (Guaranteed Maximum Price): Most common for Huvibar's larger projects; the owner's cost exposure is capped and savings are typically shared.
+        - Lump Sum: Fixed price, Huvibar bears all cost risk.
+        - T&M: Time and material, cost-reimbursable.
+        - Unit Price: Priced per unit of work.
+
+        **Subcontract compliance rules:**
+        - Insurance must be verified annually; insurance_verified_date + 365 days = expiration.
+        - Bonds are required on subcontracts over $250K. Flag records where contract_amount > 250000 AND (bond_required = false OR bond_on_file = false).
+
+        **Purchase order status values:** issued, partial_receipt, received, paid, cancelled.
+        - POs are overdue when required_delivery_date < current_date() AND actual_delivery_date IS NULL AND status NOT IN ('received', 'paid', 'cancelled').
+
+        **Contract amendments:**
+        - amount > 0: scope addition (increases contract value).
+        - amount < 0: credit or deduction.
+        - Only status = 'approved' amendments are reflected in current contract values.
+
+        **Answering guidance:**
+        - For total change order exposure, SUM(amount) from contract_amendments grouped by project.
+        - For insurance expiration, add 365 days to insurance_verified_date and compare to current_date() + 30.
+        - When users ask about "unbonded" subs, filter subcontracts WHERE contract_amount > 250000 AND bond_on_file = false.
+        - JOIN subcontractors to get company names from subcontract records.
+      tables:
+        - name: "${var.catalog}.contracts.prime_contracts"
+        - name: "${var.catalog}.contracts.subcontracts"
+        - name: "${var.catalog}.contracts.purchase_orders"
+        - name: "${var.catalog}.contracts.contract_amendments"
+        - name: "${var.catalog}.project_tracking.projects"
+        - name: "${var.catalog}.project_tracking.subcontractors"
+      verified_queries:
+        - name: "Subcontracts with expiring insurance in 30 days"
+          description: "All active subcontracts whose annual insurance verification will expire within the next 30 days."
+          query: |
+            SELECT
+              p.project_name,
+              s.company_name,
+              s.trade,
+              sc.current_value,
+              sc.insurance_verified_date,
+              s.insurance_expiry                         AS insurance_expiry_date,
+              DATEDIFF(s.insurance_expiry, current_date()) AS days_until_expiry
+            FROM ${var.catalog}.contracts.subcontracts sc
+            JOIN ${var.catalog}.project_tracking.subcontractors s
+              ON sc.sub_id = s.sub_id
+            JOIN ${var.catalog}.project_tracking.projects p
+              ON sc.project_id = p.project_id
+            WHERE sc.status NOT IN ('completed', 'cancelled')
+              AND s.insurance_expiry <= date_add(current_date(), 30)
+            ORDER BY insurance_expiry_date ASC
+
+        - name: "Open POs by project with delivery status"
+          description: "All open purchase orders that have not been fully received or closed, with days overdue for late deliveries."
+          query: |
+            SELECT
+              p.project_name,
+              po.vendor,
+              po.po_amount,
+              po.issue_date,
+              po.required_delivery_date,
+              po.actual_delivery_date,
+              po.status,
+              CASE
+                WHEN po.actual_delivery_date IS NULL AND po.required_delivery_date < current_date()
+                  THEN DATEDIFF(current_date(), po.required_delivery_date)
+                ELSE 0
+              END AS days_overdue
+            FROM ${var.catalog}.contracts.purchase_orders po
+            JOIN ${var.catalog}.project_tracking.projects p
+              ON po.project_id = p.project_id
+            WHERE po.status NOT IN ('received', 'paid', 'cancelled')
+            ORDER BY days_overdue DESC, p.project_name
+
+        - name: "Total change order exposure by project"
+          description: "Net approved contract amendment value per project, showing total additions and credits."
+          query: |
+            SELECT
+              p.project_name,
+              ca.project_id,
+              SUM(CASE WHEN ca.amount > 0 THEN ca.amount ELSE 0 END) AS total_additions,
+              SUM(CASE WHEN ca.amount < 0 THEN ca.amount ELSE 0 END) AS total_credits,
+              SUM(ca.amount)                                          AS net_change_order_value,
+              COUNT(ca.amendment_id)                                  AS amendment_count
+            FROM ${var.catalog}.contracts.contract_amendments ca
+            JOIN ${var.catalog}.project_tracking.projects p
+              ON ca.project_id = p.project_id
+            WHERE ca.status = 'approved'
+            GROUP BY p.project_name, ca.project_id
+            ORDER BY net_change_order_value DESC

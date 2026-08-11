@@ -1,0 +1,93 @@
+resources:
+  genie_spaces:
+    huvibar_billables:
+      display_name: "Huvibar | Billables & AR"
+      warehouse_id: ${var.warehouse_id}
+      description: "Accounts receivable aging, T&M ticket billing, change order billings, and invoice status tracking for Huvibar's project portfolio."
+      instructions: |
+        You are an accounts receivable and billing analytics assistant for Huvibar Construction. This space tracks all billable work issued to project owners, including standard contract invoices, time-and-material field tickets, and change order billings.
+
+        **Distinction between invoices and pay applications:**
+        - Invoices (this space) are direct billings to the owner, often used for T&M work, smaller projects, or interim billings outside the formal AIA process.
+        - Pay applications (separate space) are formal AIA G702/G703 billings used on larger GMP or lump-sum contracts.
+
+        **Data available:**
+        - invoices: Header-level invoice records with invoice_id, project_id, invoice_number, invoice_date, due_date, total_amount, balance_due, status, and days_outstanding (pre-calculated field).
+        - invoice_line_items: Detail lines per invoice with line_id, invoice_id, description, quantity, unit_price, and extended_amount.
+        - time_and_material_tickets: Field T&M records with ticket_id, project_id, work_date, labor_hours, labor_rate, material_cost, equipment_cost, markup_pct, billable_amount, status, and invoice_id (NULL if not yet billed).
+        - change_order_billings: Billings for owner-approved change orders with billing_id, project_id, change_order_id, billing_amount, billing_date, status, and invoice_id.
+        - projects: Master project reference.
+
+        **AR aging buckets (based on days_outstanding):**
+        - Current: 0–30 days
+        - 30–60 days
+        - 61–90 days
+        - 90+ days (most at-risk)
+
+        **Key metrics:**
+        - Total AR: SUM(balance_due) WHERE status != 'paid'
+        - DSO (Days Sales Outstanding): (Total AR / Total billed in period) × days in period
+        - Unbilled backlog: T&M tickets with status='approved' and invoice_id IS NULL
+
+        **Answering guidance:**
+        - days_outstanding is pre-calculated on the invoices table — no need to compute from dates.
+        - For unbilled T&M, filter time_and_material_tickets WHERE status = 'approved' AND invoice_id IS NULL.
+        - Change order billings represent extra work outside the base contract scope.
+        - When users ask about "outstanding" or "unpaid" invoices, filter status NOT IN ('paid', 'void', 'cancelled').
+      tables:
+        - name: "${var.catalog}.billables.invoices"
+        - name: "${var.catalog}.billables.invoice_line_items"
+        - name: "${var.catalog}.billables.time_and_material_tickets"
+        - name: "${var.catalog}.billables.change_order_billings"
+        - name: "${var.catalog}.project_tracking.projects"
+      verified_queries:
+        - name: "AR aging summary"
+          description: "Total balance due bucketed into aging periods (0-30, 31-60, 61-90, 90+ days) across all open invoices."
+          query: |
+            SELECT
+              CASE
+                WHEN days_outstanding <= 30  THEN '0-30 days (Current)'
+                WHEN days_outstanding <= 60  THEN '31-60 days'
+                WHEN days_outstanding <= 90  THEN '61-90 days'
+                ELSE '90+ days'
+              END                      AS aging_bucket,
+              COUNT(invoice_id)        AS invoice_count,
+              ROUND(SUM(balance_due), 2) AS total_balance_due
+            FROM ${var.catalog}.billables.invoices
+            WHERE status NOT IN ('paid', 'void', 'cancelled')
+            GROUP BY aging_bucket
+            ORDER BY
+              CASE aging_bucket
+                WHEN '0-30 days (Current)' THEN 1
+                WHEN '31-60 days'          THEN 2
+                WHEN '61-90 days'          THEN 3
+                ELSE 4
+              END
+
+        - name: "Unbilled T&M by project"
+          description: "Total approved T&M ticket value not yet invoiced, grouped by project."
+          query: |
+            SELECT
+              p.project_name,
+              tmt.project_id,
+              COUNT(tmt.ticket_id)              AS ticket_count,
+              ROUND(SUM(tmt.billable_amount), 2) AS unbilled_amount
+            FROM ${var.catalog}.billables.time_and_material_tickets tmt
+            JOIN ${var.catalog}.project_tracking.projects p
+              ON tmt.project_id = p.project_id
+            WHERE tmt.status = 'approved'
+              AND tmt.invoice_id IS NULL
+            GROUP BY p.project_name, tmt.project_id
+            ORDER BY unbilled_amount DESC
+
+        - name: "Invoice status summary"
+          description: "Count and total dollar value of invoices grouped by status (draft, sent, partial, paid, etc.)."
+          query: |
+            SELECT
+              status,
+              COUNT(invoice_id)               AS invoice_count,
+              ROUND(SUM(total_amount), 2)     AS total_invoiced,
+              ROUND(SUM(balance_due), 2)      AS total_outstanding
+            FROM ${var.catalog}.billables.invoices
+            GROUP BY status
+            ORDER BY total_invoiced DESC

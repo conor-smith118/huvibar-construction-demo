@@ -1,0 +1,6 @@
+resources:
+  apps:
+    huvibar_project_tracking_app:
+      name: "huvibar-project-tracking"
+      description: "Huvibar Construction project tracking and field management — project health, milestone status, open RFIs, and submittal log in one place."
+      source_code_path: ../apps/project_tracking

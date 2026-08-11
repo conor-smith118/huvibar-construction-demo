@@ -1,0 +1,113 @@
+resources:
+  genie_spaces:
+    huvibar_safety:
+      display_name: "Huvibar | Safety & Compliance"
+      warehouse_id: ${var.warehouse_id}
+      description: "OSHA incident rates (TRIR, LTIR, DART), toolbox talk compliance, safety inspection scores, and employee certification tracking across Huvibar's jobsites."
+      instructions: |
+        You are a safety and compliance analytics assistant for Huvibar Construction. This space covers all occupational safety data including OSHA recordable incidents, safety inspections, toolbox talks, and employee certification compliance.
+
+        **Data available:**
+        - incidents: Incident records with incident_id, project_id, employee_id, incident_date, incident_type, osha_recordable (boolean), lost_time (boolean), days_away, days_restricted, description, and corrective_action.
+        - osha_300_log: OSHA Form 300 entries linked to recordable incidents with log_id, incident_id, project_id, case_type, days_away_from_work, days_of_job_transfer, and calendar_year.
+        - toolbox_talks: Safety meeting records with talk_id, project_id, talk_date, topic, presenter, attendee_count, duration_minutes, and foreman_signature.
+        - safety_inspections: Jobsite inspection records with inspection_id, project_id, inspection_date, inspector_name, score (0–100), findings_count, and corrective_actions_required.
+        - certifications: Employee credential records with cert_id, employee_id, cert_type, issued_date, expiry_date, and status.
+        - projects: Master project reference.
+        - employees: Employee master with employee_id, first_name, last_name, role, department, trade, hire_date, and employment_type.
+
+        **OSHA rate formulas (per 200,000 exposure hours — equivalent to 100 full-time workers for one year):**
+        - TRIR (Total Recordable Incident Rate) = (recordable_incidents × 200,000) / total_hours_worked
+          - Industry average for construction: ~2.5; below 1.0 is excellent.
+        - LTIR (Lost Time Incident Rate) = (lost_time_incidents × 200,000) / total_hours_worked
+        - DART Rate (Days Away, Restricted, or Transferred) = (dart_cases × 200,000) / total_hours_worked
+
+        **Hours source:** Use total_hours from daily_manpower_log (scheduling schema) for exposure hours when computing rates.
+
+        **Toolbox talks:**
+        - Should occur daily or weekly depending on project phase.
+        - Training hours = attendee_count × duration_minutes / 60.
+
+        **Certification compliance:**
+        - Expired: expiry_date < current_date()
+        - Expiring soon: expiry_date BETWEEN current_date() AND date_add(current_date(), 60)
+        - Common cert_types: OSHA 10, OSHA 30, First Aid/CPR, Forklift, Rigging, Scaffold, Confined Space.
+
+        **Safety inspection scoring:**
+        - Score 85–100: Acceptable.
+        - Score 70–84: Needs improvement.
+        - Score below 70: Triggers corrective action plan.
+
+        **Answering guidance:**
+        - For TRIR calculations, COUNT incidents WHERE osha_recordable = true.
+        - For LTIR calculations, COUNT incidents WHERE lost_time = true.
+        - DART cases include incidents with days_away > 0, days_restricted > 0, or a job transfer.
+        - Always specify the time period when calculating rates (YTD, last 12 months, etc.).
+        - JOIN employees on employee_id to show names in incident or certification queries.
+        - JOIN projects on project_id to show project names.
+      tables:
+        - name: "${var.catalog}.safety_compliance.incidents"
+        - name: "${var.catalog}.safety_compliance.osha_300_log"
+        - name: "${var.catalog}.safety_compliance.toolbox_talks"
+        - name: "${var.catalog}.safety_compliance.safety_inspections"
+        - name: "${var.catalog}.safety_compliance.certifications"
+        - name: "${var.catalog}.project_tracking.projects"
+        - name: "${var.catalog}.project_tracking.employees"
+      verified_queries:
+        - name: "YTD TRIR"
+          description: "Year-to-date Total Recordable Incident Rate calculated as (recordable incidents × 200,000) divided by total hours worked."
+          query: |
+            SELECT
+              ROUND(
+                COUNT(i.incident_id) * 200000.0
+                / NULLIF(SUM(dml.total_hours), 0),
+                2
+              ) AS ytd_trir,
+              COUNT(i.incident_id) AS recordable_incidents,
+              SUM(dml.total_hours) AS total_hours_worked
+            FROM (
+              SELECT SUM(total_hours) AS total_hours
+              FROM ${var.catalog}.scheduling.daily_manpower_log
+              WHERE year(log_date) = year(current_date())
+            ) dml
+            CROSS JOIN (
+              SELECT incident_id
+              FROM ${var.catalog}.safety_compliance.incidents
+              WHERE osha_recordable = true
+                AND year(incident_date) = year(current_date())
+            ) i
+
+        - name: "Employees with expiring certifications in 60 days"
+          description: "All employees whose certifications will expire within the next 60 days, including cert type and days remaining."
+          query: |
+            SELECT
+              CONCAT(e.first_name, ' ', e.last_name) AS employee_name,
+              e.trade,
+              c.cert_type,
+              c.expiry_date,
+              DATEDIFF(c.expiry_date, current_date()) AS days_until_expiry
+            FROM ${var.catalog}.safety_compliance.certifications c
+            JOIN ${var.catalog}.project_tracking.employees e
+              ON c.employee_id = e.employee_id
+            WHERE c.expiry_date BETWEEN current_date()
+                AND date_add(current_date(), 60)
+              AND e.active = true
+            ORDER BY c.expiry_date ASC
+
+        - name: "Average safety inspection score by project (last 90 days)"
+          description: "Average inspection score per project over the trailing 90 days, with count of inspections and findings."
+          query: |
+            SELECT
+              p.project_name,
+              si.project_id,
+              COUNT(si.inspection_id)                AS inspection_count,
+              ROUND(AVG(si.score), 1)                AS avg_score,
+              MIN(si.score)                          AS min_score,
+              SUM(si.findings_count)                 AS total_findings,
+              SUM(si.corrective_actions_required)    AS total_corrective_actions
+            FROM ${var.catalog}.safety_compliance.safety_inspections si
+            JOIN ${var.catalog}.project_tracking.projects p
+              ON si.project_id = p.project_id
+            WHERE si.inspection_date >= date_sub(current_date(), 90)
+            GROUP BY p.project_name, si.project_id
+            ORDER BY avg_score ASC

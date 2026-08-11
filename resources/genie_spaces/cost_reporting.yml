@@ -1,0 +1,114 @@
+resources:
+  genie_spaces:
+    huvibar_cost_reporting:
+      display_name: "Huvibar | Cost Reporting & Forecasting"
+      warehouse_id: ${var.warehouse_id}
+      description: "Budget vs. actual vs. forecast cost control, EAC variance analysis, change order exposure, and monthly burn rate reporting across Huvibar projects."
+      instructions: |
+        You are a construction cost control analytics assistant for Huvibar Construction. This space covers the full cost management lifecycle from original budget through committed costs, actual expenditures, and forward-looking forecasts.
+
+        **Cost control hierarchy:**
+        Budget → Committed (subcontracts, POs) → Actual (invoices paid) → Forecast (estimate at completion)
+
+        **Data available:**
+        - budget_line_items: Original and revised budget by project and cost code with project_id, cost_code_id, cost_type, original_budget, approved_changes, and current_budget.
+        - committed_costs: Subcontract and PO commitments with project_id, cost_code_id, commitment_type, vendor, committed_amount, and invoiced_to_date.
+        - actual_costs: Posted cost transactions with project_id, cost_code_id, cost_type, transaction_date, amount, vendor, and description.
+        - cost_forecast: Forward-looking estimates with project_id, cost_code_id, actual_to_date, estimate_to_complete, estimate_at_completion, and variance_amount and variance_pct.
+        - change_orders: Owner-approved and pending change orders with project_id, co_number, description, amount, status, and approved_date.
+        - projects: Master project reference.
+        - cost_codes: CSI MasterFormat code reference with cost_code_id, division, subdivision, and description.
+
+        **Key formulas:**
+        - EAC (Estimate at Completion) = actual_to_date + estimate_to_complete
+        - Variance = current_budget - estimate_at_completion (positive = OVER budget; negative = under budget)
+        - Variance % = variance_amount / current_budget * 100
+        - Burn rate = monthly actual cost spend trend from actual_costs
+
+        **Cost types:** labor, material, equipment, subcontractor (sub), other
+
+        **CSI MasterFormat divisions:** Divisions 01–16 are used (e.g., 03 = Concrete, 05 = Metals, 09 = Finishes).
+
+        **Change orders:**
+        - Positive amount = owner-approved scope addition (increases budget).
+        - Negative amount = credit or deduction.
+        - Only status = 'approved' change orders are reflected in current_budget.
+
+        **Answering guidance:**
+        - When users ask about "over budget" items, calculate variance as current_budget - estimate_at_completion, then filter where that value > 0.
+        - variance_pct in cost_forecast is pre-calculated but verify the sign convention (positive = over budget).
+        - For burn rate questions, GROUP BY date_trunc('month', transaction_date) on actual_costs.
+        - Always JOIN cost_codes when users reference division names rather than IDs.
+      tables:
+        - name: "${var.catalog}.cost_reporting.budget_line_items"
+        - name: "${var.catalog}.cost_reporting.committed_costs"
+        - name: "${var.catalog}.cost_reporting.actual_costs"
+        - name: "${var.catalog}.cost_reporting.cost_forecast"
+        - name: "${var.catalog}.cost_reporting.change_orders"
+        - name: "${var.catalog}.project_tracking.projects"
+        - name: "${var.catalog}.project_tracking.cost_codes"
+      verified_queries:
+        - name: "Budget vs actual vs forecast by project"
+          description: "Project-level rollup comparing current budget, actual costs to date, estimate at completion, and dollar variance."
+          query: |
+            SELECT
+              p.project_name,
+              bli.project_id,
+              ROUND(SUM(bli.current_budget), 2)          AS current_budget,
+              ROUND(SUM(ac.actual_to_date), 2)           AS actual_to_date,
+              ROUND(SUM(cf.estimate_at_completion), 2)   AS estimate_at_completion,
+              ROUND(
+                SUM(bli.current_budget) - SUM(cf.estimate_at_completion),
+                2
+              )                                           AS variance_amount,
+              ROUND(
+                (SUM(bli.current_budget) - SUM(cf.estimate_at_completion)) /
+                NULLIF(SUM(bli.current_budget), 0) * 100,
+                1
+              )                                           AS variance_pct
+            FROM ${var.catalog}.cost_reporting.budget_line_items bli
+            JOIN ${var.catalog}.project_tracking.projects p
+              ON bli.project_id = p.project_id
+            LEFT JOIN (
+              SELECT project_id, cost_code_id, SUM(amount) AS actual_to_date
+              FROM ${var.catalog}.cost_reporting.actual_costs
+              GROUP BY project_id, cost_code_id
+            ) ac ON bli.project_id = ac.project_id AND bli.cost_code_id = ac.cost_code_id
+            LEFT JOIN ${var.catalog}.cost_reporting.cost_forecast cf
+              ON bli.project_id = cf.project_id AND bli.cost_code_id = cf.cost_code_id
+            GROUP BY p.project_name, bli.project_id
+            ORDER BY variance_amount DESC
+
+        - name: "Top cost overruns by cost code"
+          description: "Cost codes with a forecast variance greater than 10% over budget, ordered by dollar overrun amount."
+          query: |
+            SELECT
+              p.project_name,
+              cc.division,
+              cc.description                               AS cost_code_description,
+              bli.cost_code_id,
+              ROUND(bli.current_budget, 2)                AS current_budget,
+              ROUND(cf.estimate_at_completion, 2)         AS estimate_at_completion,
+              ROUND(cf.variance_amount, 2)                AS variance_amount,
+              ROUND(cf.variance_pct, 1)                   AS variance_pct
+            FROM ${var.catalog}.cost_reporting.cost_forecast cf
+            JOIN ${var.catalog}.cost_reporting.budget_line_items bli
+              ON cf.project_id = bli.project_id AND cf.cost_code_id = bli.cost_code_id
+            JOIN ${var.catalog}.project_tracking.projects p
+              ON cf.project_id = p.project_id
+            JOIN ${var.catalog}.project_tracking.cost_codes cc
+              ON cf.cost_code_id = cc.cost_code_id
+            WHERE cf.variance_pct > 10
+            ORDER BY cf.variance_amount DESC
+
+        - name: "Monthly actual cost burn rate (last 12 months)"
+          description: "Total actual cost spend per month over the trailing 12 months, across all projects."
+          query: |
+            SELECT
+              date_trunc('month', transaction_date) AS month,
+              ROUND(SUM(amount), 2)                 AS total_actual_cost,
+              COUNT(DISTINCT project_id)            AS active_projects
+            FROM ${var.catalog}.cost_reporting.actual_costs
+            WHERE transaction_date >= add_months(date_trunc('month', current_date()), -12)
+            GROUP BY date_trunc('month', transaction_date)
+            ORDER BY month ASC
