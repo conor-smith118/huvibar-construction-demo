@@ -3,5 +3,4 @@ resources:
     huvibar_safety:
       display_name: "Huvibar | Safety & Compliance"
       warehouse_id: ${var.warehouse_id}
-      parent: "~/.bundle/huvibar-construction-demo/${bundle.target}"
-      file_path: ./safety.lvdash.json
+      file_path: safety.lvdash.json
