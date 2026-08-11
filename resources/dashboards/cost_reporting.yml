@@ -3,4 +3,5 @@ resources:
     huvibar_cost_reporting:
       display_name: "Huvibar | Cost & Budget"
       warehouse_id: ${var.warehouse_id}
+      parent: "~/.bundle/huvibar-construction-demo/${bundle.target}"
       file_path: ./cost_reporting.lvdash.json
