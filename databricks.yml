@@ -15,11 +15,13 @@ targets:
     default: true
     workspace:
       host: https://adb-7405605962645785.5.azuredatabricks.net
+      profile: css-genie-demo
 
   prod:
     mode: production
     workspace:
       host: https://adb-7405605962645785.5.azuredatabricks.net
+      profile: css-genie-demo
 
 include:
   - resources/jobs/*.yml

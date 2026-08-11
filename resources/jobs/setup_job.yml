@@ -21,7 +21,7 @@ resources:
         - task_key: shared_dimensions
           job_cluster_key: setup_cluster
           notebook_task:
-            notebook_path: ../notebooks/data_generation/00_shared_dimensions
+            notebook_path: ../../notebooks/data_generation/00_shared_dimensions.py
             base_parameters:
               catalog: "{{var:catalog}}"
           timeout_seconds: 600
@@ -31,7 +31,7 @@ resources:
           depends_on: [{task_key: shared_dimensions}]
           job_cluster_key: setup_cluster
           notebook_task:
-            notebook_path: ../notebooks/data_generation/01_scheduling
+            notebook_path: ../../notebooks/data_generation/01_scheduling.py
             base_parameters:
               catalog: "{{var:catalog}}"
           timeout_seconds: 1800
@@ -40,7 +40,7 @@ resources:
           depends_on: [{task_key: shared_dimensions}]
           job_cluster_key: setup_cluster
           notebook_task:
-            notebook_path: ../notebooks/data_generation/02_payments
+            notebook_path: ../../notebooks/data_generation/02_payments.py
             base_parameters:
               catalog: "{{var:catalog}}"
           timeout_seconds: 600
@@ -49,7 +49,7 @@ resources:
           depends_on: [{task_key: shared_dimensions}]
           job_cluster_key: setup_cluster
           notebook_task:
-            notebook_path: ../notebooks/data_generation/03_billables
+            notebook_path: ../../notebooks/data_generation/03_billables.py
             base_parameters:
               catalog: "{{var:catalog}}"
           timeout_seconds: 600
@@ -58,7 +58,7 @@ resources:
           depends_on: [{task_key: shared_dimensions}]
           job_cluster_key: setup_cluster
           notebook_task:
-            notebook_path: ../notebooks/data_generation/04_cost_reporting
+            notebook_path: ../../notebooks/data_generation/04_cost_reporting.py
             base_parameters:
               catalog: "{{var:catalog}}"
           timeout_seconds: 1800
@@ -67,7 +67,7 @@ resources:
           depends_on: [{task_key: shared_dimensions}]
           job_cluster_key: setup_cluster
           notebook_task:
-            notebook_path: ../notebooks/data_generation/05_project_tracking
+            notebook_path: ../../notebooks/data_generation/05_project_tracking.py
             base_parameters:
               catalog: "{{var:catalog}}"
           timeout_seconds: 1200
@@ -76,7 +76,7 @@ resources:
           depends_on: [{task_key: shared_dimensions}]
           job_cluster_key: setup_cluster
           notebook_task:
-            notebook_path: ../notebooks/data_generation/06_contracts
+            notebook_path: ../../notebooks/data_generation/06_contracts.py
             base_parameters:
               catalog: "{{var:catalog}}"
           timeout_seconds: 600
@@ -85,7 +85,7 @@ resources:
           depends_on: [{task_key: shared_dimensions}]
           job_cluster_key: setup_cluster
           notebook_task:
-            notebook_path: ../notebooks/data_generation/07_concrete_testing
+            notebook_path: ../../notebooks/data_generation/07_concrete_testing.py
             base_parameters:
               catalog: "{{var:catalog}}"
           timeout_seconds: 600
@@ -94,7 +94,7 @@ resources:
           depends_on: [{task_key: shared_dimensions}]
           job_cluster_key: setup_cluster
           notebook_task:
-            notebook_path: ../notebooks/data_generation/08_safety_compliance
+            notebook_path: ../../notebooks/data_generation/08_safety_compliance.py
             base_parameters:
               catalog: "{{var:catalog}}"
           timeout_seconds: 600
@@ -112,7 +112,7 @@ resources:
             - {task_key: safety_data}
           job_cluster_key: setup_cluster
           notebook_task:
-            notebook_path: ../notebooks/semantics/01_table_comments
+            notebook_path: ../../notebooks/semantics/01_table_comments.py
             base_parameters:
               catalog: "{{var:catalog}}"
           timeout_seconds: 300
@@ -121,7 +121,7 @@ resources:
           depends_on: [{task_key: table_comments}]
           job_cluster_key: setup_cluster
           notebook_task:
-            notebook_path: ../notebooks/semantics/02_column_comments
+            notebook_path: ../../notebooks/semantics/02_column_comments.py
             base_parameters:
               catalog: "{{var:catalog}}"
           timeout_seconds: 300

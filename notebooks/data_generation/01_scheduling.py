@@ -385,14 +385,14 @@ print(f"Created {catalog}.scheduling.subcontractor_schedules with {df.count()} r
 
 # COMMAND ----------
 
-# ── TABLE: daily_manpower_log (~45,000 rows) ────────────────────────────────────
+# ── TABLE: daily_manpower_log (~15,000 rows) ────────────────────────────────────
 # One log per project per working day (Mon-Fri), plus Saturday work.
 # Uses the full projected project duration (not capped at TODAY) so future-dated
-# projects have forecasted log entries. Saturday work is common on larger projects.
+# active projects have forecasted log entries representing planned staffing.
+# Saturday work logs are generated at realistic probabilities based on project size.
 # Notes text is generated for ~15% of entries.
-# To reach ~45K rows we generate 3x entries per day for the largest projects
-# (separate morning, midday, and end-of-day shift logs) and add Saturday logs
-# for all projects.
+# Row count is naturally constrained by the 25-project universe: 25 projects
+# averaging ~600 working days each yields ~15,000 project-day rows.
 
 NOTES_POOL = [
     "Full crew on site, weather favorable.",

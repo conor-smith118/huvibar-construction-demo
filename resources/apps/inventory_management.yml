@@ -3,4 +3,4 @@ resources:
     huvibar_inventory_app:
       name: "huvibar-inventory-management"
       description: "Huvibar Construction inventory and materials management — tracks open POs, material deliveries, and procurement alerts across all active projects."
-      source_code_path: ../apps/inventory_management
+      source_code_path: ../../apps/inventory_management

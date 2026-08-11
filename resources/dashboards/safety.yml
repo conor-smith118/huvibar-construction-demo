@@ -3,4 +3,4 @@ resources:
     huvibar_safety:
       display_name: "Huvibar | Safety & Compliance"
       warehouse_id: ${var.warehouse_id}
-      file_path: ../resources/dashboards/safety.lvdash.json
+      file_path: ./safety.lvdash.json
