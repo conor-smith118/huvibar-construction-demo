@@ -13,8 +13,8 @@ resources:
             spark_conf:
               spark.databricks.delta.preview.enabled: "true"
             azure_attributes:
-              first_on_demand: 1
-              availability: SPOT_WITH_FALLBACK_AZURE
+              first_on_demand: 4
+              availability: ON_DEMAND_AZURE
 
       tasks:
         # Task 0: Create shared dimensions (must run first)
@@ -24,7 +24,7 @@ resources:
             notebook_path: ../../notebooks/data_generation/00_shared_dimensions.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 600
+          timeout_seconds: 1800
 
         # Tasks 1-8: Domain data (run in parallel after task 0)
         - task_key: scheduling_data
@@ -43,7 +43,7 @@ resources:
             notebook_path: ../../notebooks/data_generation/02_payments.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 600
+          timeout_seconds: 3600
 
         - task_key: billables_data
           depends_on: [{task_key: shared_dimensions}]
@@ -52,7 +52,7 @@ resources:
             notebook_path: ../../notebooks/data_generation/03_billables.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 600
+          timeout_seconds: 3600
 
         - task_key: cost_reporting_data
           depends_on: [{task_key: shared_dimensions}]
@@ -70,7 +70,7 @@ resources:
             notebook_path: ../../notebooks/data_generation/05_project_tracking.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 1200
+          timeout_seconds: 3600
 
         - task_key: contracts_data
           depends_on: [{task_key: shared_dimensions}]
@@ -79,7 +79,7 @@ resources:
             notebook_path: ../../notebooks/data_generation/06_contracts.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 600
+          timeout_seconds: 3600
 
         - task_key: concrete_testing_data
           depends_on: [{task_key: shared_dimensions}]
@@ -88,7 +88,7 @@ resources:
             notebook_path: ../../notebooks/data_generation/07_concrete_testing.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 600
+          timeout_seconds: 3600
 
         - task_key: safety_data
           depends_on: [{task_key: shared_dimensions}]
@@ -97,7 +97,7 @@ resources:
             notebook_path: ../../notebooks/data_generation/08_safety_compliance.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 600
+          timeout_seconds: 3600
 
         # Semantics: run after all data generation
         - task_key: table_comments
@@ -115,7 +115,7 @@ resources:
             notebook_path: ../../notebooks/semantics/01_table_comments.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 300
+          timeout_seconds: 1200
 
         - task_key: column_comments
           depends_on: [{task_key: table_comments}]
@@ -124,7 +124,7 @@ resources:
             notebook_path: ../../notebooks/semantics/02_column_comments.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 300
+          timeout_seconds: 1200
 
       email_notifications:
         on_success:
