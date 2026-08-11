@@ -354,42 +354,42 @@
         {
           "name": "active_projects_count",
           "displayName": "Active Projects Count",
-          "query": "SELECT COUNT(*) as count FROM ${var.catalog}.project_tracking.projects WHERE status = 'active'"
+          "query": "SELECT COUNT(*) as count FROM css_genie.project_tracking.projects WHERE status = 'active'"
         },
         {
           "name": "total_contract_value",
           "displayName": "Total Contract Value",
-          "query": "SELECT SUM(contract_value) as total_value FROM ${var.catalog}.project_tracking.projects WHERE status IN ('active', 'closeout')"
+          "query": "SELECT SUM(contract_value) as total_value FROM css_genie.project_tracking.projects WHERE status IN ('active', 'closeout')"
         },
         {
           "name": "open_rfis_count",
           "displayName": "Open RFIs Count",
-          "query": "SELECT COUNT(*) as count FROM ${var.catalog}.project_tracking.rfis WHERE status = 'open'"
+          "query": "SELECT COUNT(*) as count FROM css_genie.project_tracking.rfis WHERE status = 'open'"
         },
         {
           "name": "overdue_submittals",
           "displayName": "Overdue Submittals",
-          "query": "SELECT COUNT(*) as count FROM ${var.catalog}.project_tracking.submittals WHERE status IN ('pending','revise_resubmit') AND required_date < current_date()"
+          "query": "SELECT COUNT(*) as count FROM css_genie.project_tracking.submittals WHERE status IN ('pending','revise_resubmit') AND required_date < current_date()"
         },
         {
           "name": "projects_by_type",
           "displayName": "Projects by Type",
-          "query": "SELECT project_type, COUNT(*) as count, SUM(contract_value) as total_value FROM ${var.catalog}.project_tracking.projects GROUP BY project_type"
+          "query": "SELECT project_type, COUNT(*) as count, SUM(contract_value) as total_value FROM css_genie.project_tracking.projects GROUP BY project_type"
         },
         {
           "name": "project_list",
           "displayName": "Project List",
-          "query": "SELECT p.project_name, p.project_type, p.contract_value, p.status, p.project_manager, p.superintendent, p.start_date, p.projected_end_date, p.percent_complete FROM ${var.catalog}.project_tracking.projects p ORDER BY p.contract_value DESC"
+          "query": "SELECT p.project_name, p.project_type, p.contract_value, p.status, p.project_manager, p.superintendent, p.start_date, p.projected_end_date, p.percent_complete FROM css_genie.project_tracking.projects p ORDER BY p.contract_value DESC"
         },
         {
           "name": "open_rfis_by_project",
           "displayName": "Open RFIs by Project",
-          "query": "SELECT p.project_name, COUNT(r.rfi_id) as open_rfis, MAX(r.days_open) as max_days_open FROM ${var.catalog}.project_tracking.rfis r JOIN ${var.catalog}.project_tracking.projects p ON r.project_id = p.project_id WHERE r.status = 'open' GROUP BY p.project_name ORDER BY open_rfis DESC"
+          "query": "SELECT p.project_name, COUNT(r.rfi_id) as open_rfis, MAX(r.days_open) as max_days_open FROM css_genie.project_tracking.rfis r JOIN css_genie.project_tracking.projects p ON r.project_id = p.project_id WHERE r.status = 'open' GROUP BY p.project_name ORDER BY open_rfis DESC"
         },
         {
           "name": "projects_started_by_quarter",
           "displayName": "Projects Started by Quarter",
-          "query": "SELECT date_trunc('quarter', start_date) as quarter, COUNT(*) as projects_started, SUM(contract_value) as total_value FROM ${var.catalog}.project_tracking.projects GROUP BY quarter ORDER BY quarter"
+          "query": "SELECT date_trunc('quarter', start_date) as quarter, COUNT(*) as projects_started, SUM(contract_value) as total_value FROM css_genie.project_tracking.projects GROUP BY quarter ORDER BY quarter"
         }
       ]
     }

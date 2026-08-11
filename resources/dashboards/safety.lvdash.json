@@ -270,42 +270,42 @@
         {
           "name": "trir_ytd",
           "displayName": "TRIR YTD",
-          "query": "SELECT ROUND(COUNT(CASE WHEN osha_recordable = true THEN 1 END) * 200000.0 / NULLIF(SUM(ml.total_hours), 0), 2) as trir FROM ${var.catalog}.safety_compliance.incidents i CROSS JOIN (SELECT SUM(total_hours) as total_hours FROM ${var.catalog}.scheduling.daily_manpower_log WHERE YEAR(log_date) = YEAR(current_date())) ml WHERE YEAR(i.incident_date) = YEAR(current_date())"
+          "query": "SELECT ROUND(COUNT(CASE WHEN osha_recordable = true THEN 1 END) * 200000.0 / NULLIF(SUM(ml.total_hours), 0), 2) as trir FROM css_genie.safety_compliance.incidents i CROSS JOIN (SELECT SUM(total_hours) as total_hours FROM css_genie.scheduling.daily_manpower_log WHERE YEAR(log_date) = YEAR(current_date())) ml WHERE YEAR(i.incident_date) = YEAR(current_date())"
         },
         {
           "name": "recordable_ytd",
           "displayName": "Recordable Incidents YTD",
-          "query": "SELECT COUNT(*) as count FROM ${var.catalog}.safety_compliance.incidents WHERE osha_recordable = true AND YEAR(incident_date) = YEAR(current_date())"
+          "query": "SELECT COUNT(*) as count FROM css_genie.safety_compliance.incidents WHERE osha_recordable = true AND YEAR(incident_date) = YEAR(current_date())"
         },
         {
           "name": "days_since_incident",
           "displayName": "Days Since Last Recordable",
-          "query": "SELECT DATEDIFF(current_date(), MAX(incident_date)) as days FROM ${var.catalog}.safety_compliance.incidents WHERE osha_recordable = true"
+          "query": "SELECT DATEDIFF(current_date(), MAX(incident_date)) as days FROM css_genie.safety_compliance.incidents WHERE osha_recordable = true"
         },
         {
           "name": "expired_certs",
           "displayName": "Expired Certifications",
-          "query": "SELECT COUNT(*) as count FROM ${var.catalog}.safety_compliance.certifications WHERE expiry_date < current_date() AND status = 'expired'"
+          "query": "SELECT COUNT(*) as count FROM css_genie.safety_compliance.certifications WHERE expiry_date < current_date() AND status = 'expired'"
         },
         {
           "name": "incidents_by_type",
           "displayName": "Incidents by Type",
-          "query": "SELECT incident_type, COUNT(*) as count, COUNT(CASE WHEN osha_recordable = true THEN 1 END) as recordable FROM ${var.catalog}.safety_compliance.incidents GROUP BY incident_type ORDER BY count DESC"
+          "query": "SELECT incident_type, COUNT(*) as count, COUNT(CASE WHEN osha_recordable = true THEN 1 END) as recordable FROM css_genie.safety_compliance.incidents GROUP BY incident_type ORDER BY count DESC"
         },
         {
           "name": "inspection_scores",
           "displayName": "Inspection Scores by Project",
-          "query": "SELECT p.project_name, AVG(si.overall_score) as avg_score, COUNT(*) as inspections FROM ${var.catalog}.safety_compliance.safety_inspections si JOIN ${var.catalog}.project_tracking.projects p ON si.project_id = p.project_id WHERE si.inspection_date >= add_months(current_date(), -3) GROUP BY p.project_name ORDER BY avg_score DESC"
+          "query": "SELECT p.project_name, AVG(si.overall_score) as avg_score, COUNT(*) as inspections FROM css_genie.safety_compliance.safety_inspections si JOIN css_genie.project_tracking.projects p ON si.project_id = p.project_id WHERE si.inspection_date >= add_months(current_date(), -3) GROUP BY p.project_name ORDER BY avg_score DESC"
         },
         {
           "name": "monthly_incidents",
           "displayName": "Monthly Incidents",
-          "query": "SELECT date_trunc('month', incident_date) as month, COUNT(*) as total_incidents, COUNT(CASE WHEN osha_recordable = true THEN 1 END) as recordable FROM ${var.catalog}.safety_compliance.incidents WHERE incident_date >= add_months(current_date(), -12) GROUP BY month ORDER BY month"
+          "query": "SELECT date_trunc('month', incident_date) as month, COUNT(*) as total_incidents, COUNT(CASE WHEN osha_recordable = true THEN 1 END) as recordable FROM css_genie.safety_compliance.incidents WHERE incident_date >= add_months(current_date(), -12) GROUP BY month ORDER BY month"
         },
         {
           "name": "open_incident_actions",
           "displayName": "Open Corrective Actions",
-          "query": "SELECT i.incident_id, i.incident_date, i.incident_type, i.severity, i.corrective_action, i.corrective_action_due_date FROM ${var.catalog}.safety_compliance.incidents i WHERE i.corrective_action_due_date > i.incident_date AND (i.corrective_action_completed_date IS NULL OR i.corrective_action_completed_date > current_date()) ORDER BY i.corrective_action_due_date"
+          "query": "SELECT i.incident_id, i.incident_date, i.incident_type, i.severity, i.corrective_action, i.corrective_action_due_date FROM css_genie.safety_compliance.incidents i WHERE i.corrective_action_due_date > i.incident_date AND (i.corrective_action_completed_date IS NULL OR i.corrective_action_completed_date > current_date()) ORDER BY i.corrective_action_due_date"
         }
       ]
     }

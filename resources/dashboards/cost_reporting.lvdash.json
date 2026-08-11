@@ -236,37 +236,37 @@
         {
           "name": "total_budget",
           "displayName": "Total Active Budget",
-          "query": "SELECT SUM(current_budget) as total FROM ${var.catalog}.cost_reporting.budget_line_items b JOIN ${var.catalog}.project_tracking.projects p ON b.project_id = p.project_id WHERE p.status = 'active'"
+          "query": "SELECT SUM(current_budget) as total FROM css_genie.cost_reporting.budget_line_items b JOIN css_genie.project_tracking.projects p ON b.project_id = p.project_id WHERE p.status = 'active'"
         },
         {
           "name": "total_actuals",
           "displayName": "Total Actual Costs",
-          "query": "SELECT SUM(amount) as total FROM ${var.catalog}.cost_reporting.actual_costs ac JOIN ${var.catalog}.project_tracking.projects p ON ac.project_id = p.project_id WHERE p.status = 'active'"
+          "query": "SELECT SUM(amount) as total FROM css_genie.cost_reporting.actual_costs ac JOIN css_genie.project_tracking.projects p ON ac.project_id = p.project_id WHERE p.status = 'active'"
         },
         {
           "name": "approved_cos",
           "displayName": "Approved Change Orders",
-          "query": "SELECT SUM(amount) as total FROM ${var.catalog}.cost_reporting.change_orders WHERE status = 'approved'"
+          "query": "SELECT SUM(amount) as total FROM css_genie.cost_reporting.change_orders WHERE status = 'approved'"
         },
         {
           "name": "over_budget_count",
           "displayName": "Projects Over Budget",
-          "query": "SELECT COUNT(DISTINCT project_id) as count FROM ${var.catalog}.cost_reporting.cost_forecast WHERE variance_amount > 0 AND forecast_month = (SELECT MAX(forecast_month) FROM ${var.catalog}.cost_reporting.cost_forecast)"
+          "query": "SELECT COUNT(DISTINCT project_id) as count FROM css_genie.cost_reporting.cost_forecast WHERE variance_amount > 0 AND forecast_month = (SELECT MAX(forecast_month) FROM css_genie.cost_reporting.cost_forecast)"
         },
         {
           "name": "budget_vs_actual",
           "displayName": "Budget vs Actual",
-          "query": "SELECT p.project_name, SUM(b.current_budget) as budget, SUM(ac.amount) as actual_cost, SUM(cf.estimate_at_completion) as eac, SUM(cf.variance_amount) as variance FROM ${var.catalog}.project_tracking.projects p LEFT JOIN ${var.catalog}.cost_reporting.budget_line_items b ON p.project_id = b.project_id LEFT JOIN ${var.catalog}.cost_reporting.actual_costs ac ON p.project_id = ac.project_id LEFT JOIN ${var.catalog}.cost_reporting.cost_forecast cf ON p.project_id = cf.project_id AND cf.forecast_month = (SELECT MAX(forecast_month) FROM ${var.catalog}.cost_reporting.cost_forecast) WHERE p.status = 'active' GROUP BY p.project_name"
+          "query": "SELECT p.project_name, SUM(b.current_budget) as budget, SUM(ac.amount) as actual_cost, SUM(cf.estimate_at_completion) as eac, SUM(cf.variance_amount) as variance FROM css_genie.project_tracking.projects p LEFT JOIN css_genie.cost_reporting.budget_line_items b ON p.project_id = b.project_id LEFT JOIN css_genie.cost_reporting.actual_costs ac ON p.project_id = ac.project_id LEFT JOIN css_genie.cost_reporting.cost_forecast cf ON p.project_id = cf.project_id AND cf.forecast_month = (SELECT MAX(forecast_month) FROM css_genie.cost_reporting.cost_forecast) WHERE p.status = 'active' GROUP BY p.project_name"
         },
         {
           "name": "monthly_burn_rate",
           "displayName": "Monthly Burn Rate",
-          "query": "SELECT date_trunc('month', transaction_date) as month, cost_type, SUM(amount) as total FROM ${var.catalog}.cost_reporting.actual_costs WHERE transaction_date >= add_months(current_date(), -12) GROUP BY month, cost_type ORDER BY month"
+          "query": "SELECT date_trunc('month', transaction_date) as month, cost_type, SUM(amount) as total FROM css_genie.cost_reporting.actual_costs WHERE transaction_date >= add_months(current_date(), -12) GROUP BY month, cost_type ORDER BY month"
         },
         {
           "name": "cost_by_type",
           "displayName": "Cost by Type",
-          "query": "SELECT cost_type, SUM(amount) as total FROM ${var.catalog}.cost_reporting.actual_costs GROUP BY cost_type"
+          "query": "SELECT cost_type, SUM(amount) as total FROM css_genie.cost_reporting.actual_costs GROUP BY cost_type"
         }
       ]
     }
