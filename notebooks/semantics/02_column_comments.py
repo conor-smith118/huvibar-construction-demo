@@ -20,7 +20,7 @@ spark.sql(f"""ALTER TABLE {catalog}.payments.pay_applications
 # COMMAND ----------
 spark.sql(f"""ALTER TABLE {catalog}.payments.pay_applications
   ALTER COLUMN work_completed_to_date COMMENT
-  'Cumulative dollar value of work completed from contract start through the end of this billing period, per the Schedule of Values. This is a running total — it should equal the prior pay app cumulative amount plus the current period work completed. Certified by the owner or owner'\''s representative.'""")
+  'Cumulative dollar value of work completed from contract start through the end of this billing period, per the Schedule of Values. This is a running total — it should equal the prior pay app cumulative amount plus the current period work completed. Certified by the owner or their authorized representative.'""")
 
 # COMMAND ----------
 spark.sql(f"""ALTER TABLE {catalog}.payments.pay_applications
@@ -58,7 +58,7 @@ spark.sql(f"""ALTER TABLE {catalog}.cost_reporting.actual_costs
 
 spark.sql(f"""ALTER TABLE {catalog}.cost_reporting.cost_forecast
   ALTER COLUMN estimate_at_completion COMMENT
-  'Project manager'\''s current best estimate of the total cost to complete the project at the forecast date, including all costs incurred to date plus the estimated cost to finish. EAC = actual_costs_to_date + estimate_to_complete. When EAC exceeds current_budget, the project is forecast over budget and variance_amount will be positive.'""")
+  'Current best estimate by the project manager of the total cost to complete the project at the forecast date, including all costs incurred to date plus the estimated cost to finish. EAC = actual_costs_to_date + estimate_to_complete. When EAC exceeds current_budget, the project is forecast over budget and variance_amount will be positive.'""")
 
 # COMMAND ----------
 spark.sql(f"""ALTER TABLE {catalog}.cost_reporting.cost_forecast
@@ -130,7 +130,7 @@ spark.sql(f"""ALTER TABLE {catalog}.concrete_testing.cylinder_breaks
 # COMMAND ----------
 spark.sql(f"""ALTER TABLE {catalog}.concrete_testing.cylinder_breaks
   ALTER COLUMN actual_strength_psi COMMENT
-  'Measured compressive strength of the test cylinder in psi as reported by the testing laboratory. ACI 318 acceptance criteria: a strength test (average of two cylinders) passes if (1) no individual test falls below fc'\'' by more than 500 psi for fc'\'' ≤ 5000 psi, AND (2) the average of any three consecutive tests exceeds fc'\''.'""")
+  'Measured compressive strength of the test cylinder in psi as reported by the testing laboratory. ACI 318 acceptance criteria: a strength test (average of two cylinders) passes if (1) no individual test falls below fc-prime by more than 500 psi for fc-prime ≤ 5000 psi, AND (2) the average of any three consecutive tests exceeds fc-prime.'""")
 
 # COMMAND ----------
 spark.sql(f"""ALTER TABLE {catalog}.concrete_testing.cylinder_breaks
