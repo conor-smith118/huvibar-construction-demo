@@ -473,9 +473,7 @@ app.layout = html.Div([
 
     # Header
     html.Div([
-        html.Span("🏗️", style={"marginRight":"10px","fontSize":"18px"}),
-        html.Span("HUVIBAR CONSTRUCTION", style={"fontSize":"15px","fontWeight":"800",
-                                                   "letterSpacing":"0.05em","color":"white","marginRight":"14px"}),
+        html.Img(src="/assets/logo.png", style={"height":"38px","marginRight":"14px","filter":"brightness(0) invert(1)"}),
         html.Span("Project Tracking & Field Management", style={"fontSize":"12px","color":"rgba(255,255,255,0.6)"}),
         html.Div([
             html.Div(style={"width":"7px","height":"7px","borderRadius":"50%","background":C_GOOD,

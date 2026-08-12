@@ -630,21 +630,14 @@ app.layout = html.Div([
         html.Div([
             # Logo
             html.Div([
-                html.Div("HUVIBAR", style={
-                    "fontWeight": "900",
-                    "fontSize": "17px",
-                    "letterSpacing": "0.12em",
-                    "color": C_INK,
-                    "fontFamily": FONT,
-                }),
+                html.Img(src="/assets/logo.png", style={"height": "44px", "width": "auto", "display": "block", "marginBottom": "6px"}),
                 html.Div("Procurement Dashboard", style={
                     "fontSize": "10px",
                     "color": C_MUTED,
                     "letterSpacing": "0.04em",
-                    "marginTop": "2px",
                 }),
             ], style={
-                "padding": "18px 16px 14px",
+                "padding": "16px 16px 14px",
                 "borderBottom": f"1px solid {C_GRID}",
                 "marginBottom": "10px",
             }),
