@@ -1,6 +1,6 @@
 resources:
   dashboards:
-    huvibar_safety:
+    huvibar_dashboard_safety:
       display_name: "Huvibar | Safety"
       warehouse_id: ${var.warehouse_id}
       file_path: ./safety.lvdash.json

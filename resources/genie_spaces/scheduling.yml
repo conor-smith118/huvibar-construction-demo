@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_scheduling:
-      display_name: "Huvibar | Scheduling & Workforce"
+      title: "Huvibar | Scheduling & Workforce"
       description: "Daily crew assignments, equipment logs, subcontractor schedules, and manpower utilization across Huvibar's 25 active projects."
       warehouse_id: ${var.warehouse_id}
       serialized_space:
@@ -19,50 +19,25 @@ resources:
                 - "Show me overtime hours by trade this month"
         data_sources:
           tables:
-            - identifier: "css_genie.scheduling.crew_schedules"
-              description:
-                - "Individual crew member daily assignments. Key fields: project_id, employee_id, trade, work_date, hours_worked, overtime_hours, foreman_id, cost_code."
-              column_configs:
-                - column_name: "trade"
-                - column_name: "work_date"
-                - column_name: "hours_worked"
-                - column_name: "overtime_hours"
-            - identifier: "css_genie.scheduling.equipment_schedules"
-              description:
-                - "Daily equipment assignments per project. Key fields: equipment_id, equipment_type, equipment_name, project_id, operator_employee_id, work_date, hours_operated, fuel_consumed_gallons, rental_rate_per_day."
-              column_configs:
-                - column_name: "equipment_type"
-                - column_name: "hours_operated"
-                - column_name: "work_date"
-            - identifier: "css_genie.scheduling.subcontractor_schedules"
-              description:
-                - "Subcontractor on-site windows. Key fields: sub_id, project_id, phase, planned_start_date, planned_end_date, actual_start_date, actual_end_date, crew_size, status."
-              column_configs:
-                - column_name: "status"
-                - column_name: "crew_size"
-                - column_name: "planned_start_date"
-                - column_name: "planned_end_date"
-            - identifier: "css_genie.scheduling.daily_manpower_log"
-              description:
-                - "Aggregated daily headcount summary per project. Key fields: log_id, log_date, project_id, huvibar_headcount, sub_headcount, total_headcount, huvibar_hours, sub_hours, total_hours, weather_condition."
-              column_configs:
-                - column_name: "log_date"
-                - column_name: "total_hours"
-                - column_name: "total_headcount"
-                - column_name: "huvibar_hours"
-                - column_name: "sub_hours"
-            - identifier: "css_genie.project_tracking.projects"
-              description:
-                - "Master project list. Key fields: project_id, project_name, status, contract_value, project_type, start_date, end_date, project_manager."
-              column_configs:
-                - column_name: "project_name"
-                - column_name: "status"
             - identifier: "css_genie.project_tracking.employees"
               description:
                 - "Employee master record. Key fields: employee_id, first_name, last_name, role, department, trade, hire_date, employment_type."
-              column_configs:
-                - column_name: "trade"
-                - column_name: "employment_type"
+            - identifier: "css_genie.project_tracking.projects"
+              description:
+                - "Master project list. Key fields: project_id, project_name, status, contract_value, project_type, start_date, end_date, project_manager."
+            - identifier: "css_genie.scheduling.crew_schedules"
+              description:
+                - "Individual crew member daily assignments. Key fields: project_id, employee_id, trade, work_date, hours_worked, overtime_hours, foreman_id, cost_code."
+            - identifier: "css_genie.scheduling.daily_manpower_log"
+              description:
+                - "Aggregated daily headcount summary per project. Key fields: log_id, log_date, project_id, huvibar_headcount, sub_headcount, total_headcount, huvibar_hours, sub_hours, total_hours, weather_condition."
+            - identifier: "css_genie.scheduling.equipment_schedules"
+              description:
+                - "Daily equipment assignments per project. Key fields: equipment_id, equipment_type, equipment_name, project_id, operator_employee_id, work_date, hours_operated, fuel_consumed_gallons, rental_rate_per_day."
+            - identifier: "css_genie.scheduling.subcontractor_schedules"
+              description:
+                - "Subcontractor on-site windows. Key fields: sub_id, project_id, phase, planned_start_date, planned_end_date, actual_start_date, actual_end_date, crew_size, status."
+
         instructions:
           text_instructions:
             - id: "f3155fef50e04609b4ee1d6f63c66943"
@@ -73,56 +48,3 @@ resources:
                 - "METRICS FORMULAS: Overtime rate = overtime_hours / hours_worked * 100. Equipment utilization = hours_operated / (standard 8-hr day) * 100. Peak headcount = MAX(total_headcount) per project per period. Weekly labor cost estimate = hours_worked * avg_loaded_rate by trade."
                 - "TRADE TYPES: carpenter, ironworker, electrician, plumber, laborer, foreman, general superintendent. When users ask about 'self-perform' labor, filter to huvibar_hours from daily_manpower_log or join crew_schedules to employees."
                 - "ANSWERING GUIDANCE: Use date_trunc('month', current_date()) for 'this month' and date_trunc('week', current_date()) for 'this week'. For named project lookups, always JOIN scheduling tables to css_genie.project_tracking.projects on project_id. Subcontractor crew counts come from subcontractor_schedules.crew_size. For overtime breakdowns by trade, join crew_schedules to employees on employee_id and group by employees.trade."
-          example_question_sqls:
-            - id: "5d20688ed951458986e19130f10f9ad1"
-              question:
-                - "Total labor hours by project this month"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    dml.project_id,
-                    SUM(dml.total_hours)      AS total_hours,
-                    SUM(dml.huvibar_hours)    AS huvibar_hours,
-                    SUM(dml.sub_hours)        AS sub_hours,
-                    COUNT(DISTINCT dml.log_date) AS days_worked
-                  FROM css_genie.scheduling.daily_manpower_log dml
-                  JOIN css_genie.project_tracking.projects p
-                    ON dml.project_id = p.project_id
-                  WHERE dml.log_date >= date_trunc('month', current_date())
-                  GROUP BY p.project_name, dml.project_id
-                  ORDER BY total_hours DESC
-            - id: "48b2e9ac28fb4d3e8126508247a18378"
-              question:
-                - "Equipment utilization by type across all projects"
-              sql:
-                - |
-                  SELECT
-                    equipment_type,
-                    COUNT(DISTINCT equipment_id)     AS equipment_count,
-                    ROUND(AVG(hours_operated), 2)    AS avg_daily_hours,
-                    ROUND(MAX(hours_operated), 2)    AS max_daily_hours,
-                    ROUND(SUM(hours_operated), 0)    AS total_hours,
-                    ROUND(AVG(hours_operated) / 8.0 * 100, 1) AS utilization_pct
-                  FROM css_genie.scheduling.equipment_schedules
-                  GROUP BY equipment_type
-                  ORDER BY total_hours DESC
-            - id: "1f2299b36191424daf548219a6e8c48f"
-              question:
-                - "Which subcontractors are currently active on site?"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    ss.sub_id,
-                    ss.phase,
-                    ss.crew_size,
-                    ss.planned_start_date,
-                    ss.planned_end_date,
-                    ss.actual_start_date,
-                    ss.status
-                  FROM css_genie.scheduling.subcontractor_schedules ss
-                  JOIN css_genie.project_tracking.projects p
-                    ON ss.project_id = p.project_id
-                  WHERE ss.status = 'active'
-                  ORDER BY ss.crew_size DESC

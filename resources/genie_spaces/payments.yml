@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_payments:
-      display_name: "Huvibar | Payment Pipeline"
+      title: "Huvibar | Payment Pipeline"
       description: "AIA payment application pipeline, retainage tracking, lien waiver management, and cash flow visibility across all Huvibar projects."
       warehouse_id: ${var.warehouse_id}
       serialized_space:
@@ -19,42 +19,21 @@ resources:
                 - "What's the average time from pay app submission to payment?"
         data_sources:
           tables:
-            - identifier: "css_genie.payments.pay_applications"
-              description:
-                - "Monthly AIA-format pay requests. Key fields: application_id, project_id, application_number, period_end_date, submitted_date, approved_date, paid_date, work_completed_to_date, materials_stored, retainage_amount, amount_due, status. Status workflow: draft → submitted → approved → paid."
-              column_configs:
-                - column_name: "status"
-                - column_name: "submitted_date"
-                - column_name: "paid_date"
-                - column_name: "amount_due"
-                - column_name: "retainage_amount"
-            - identifier: "css_genie.payments.schedule_of_values"
-              description:
-                - "Line-item breakdown of contract value per pay application. Key fields: sov_id, pay_application_id, description, scheduled_value, work_completed_pct, retainage_pct."
-              column_configs:
-                - column_name: "scheduled_value"
-                - column_name: "work_completed_pct"
-                - column_name: "retainage_pct"
             - identifier: "css_genie.payments.lien_waivers"
               description:
                 - "Lien waivers tied to pay applications. Key fields: waiver_id, pay_application_id, type (conditional or unconditional), executed_date, amount."
-              column_configs:
-                - column_name: "type"
-                - column_name: "executed_date"
+            - identifier: "css_genie.payments.pay_applications"
+              description:
+                - "Monthly AIA-format pay requests. Key fields: application_id, project_id, application_number, period_end_date, submitted_date, approved_date, paid_date, work_completed_to_date, materials_stored, retainage_amount, amount_due, status. Status workflow: draft → submitted → approved → paid."
             - identifier: "css_genie.payments.payment_ledger"
               description:
                 - "Actual cash receipts and disbursements. Key fields: ledger_id, project_id, pay_application_id, transaction_date, amount, transaction_type. transaction_type values include: payment_receipt, retainage_release."
-              column_configs:
-                - column_name: "transaction_type"
-                - column_name: "transaction_date"
-                - column_name: "amount"
+            - identifier: "css_genie.payments.schedule_of_values"
+              description:
+                - "Line-item breakdown of contract value per pay application. Key fields: sov_id, pay_application_id, description, scheduled_value, work_completed_pct, retainage_pct."
             - identifier: "css_genie.project_tracking.projects"
               description:
                 - "Master project list. Key fields: project_id, project_name, status, contract_value, project_type, start_date, end_date, project_manager."
-              column_configs:
-                - column_name: "project_name"
-                - column_name: "status"
-                - column_name: "contract_value"
         instructions:
           text_instructions:
             - id: "6f99695a28e74193beff519754cb7d91"
@@ -65,58 +44,3 @@ resources:
                 - "LIEN WAIVERS: Conditional waivers are submitted with the pay request and take effect only upon actual payment. Unconditional waivers are provided after payment is received and represent final waiver of lien rights for amounts paid."
                 - "KEY METRICS: Outstanding AR = SUM(amount_due) WHERE status IN ('submitted', 'approved'). Total retainage balance = SUM(retainage_amount) WHERE status != 'paid'. Days to payment = DATEDIFF(paid_date, submitted_date). Billing efficiency = work_completed_to_date / contract_value * 100."
                 - "ANSWERING GUIDANCE: For cash flow questions, reference both amount_due from pay_applications (what is owed) and payment_ledger (what has been received). When users ask about a named project, always JOIN to css_genie.project_tracking.projects on project_id. Schedule of values breakdowns require joining sov to pay_applications on pay_application_id."
-          example_question_sqls:
-            - id: "603d01e8cb684280a3ce900ad9ef1e4c"
-              question:
-                - "What pay applications are outstanding?"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    pa.application_number,
-                    pa.period_end_date,
-                    pa.submitted_date,
-                    pa.status,
-                    pa.amount_due,
-                    pa.retainage_amount,
-                    DATEDIFF(current_date(), pa.submitted_date) AS days_since_submitted
-                  FROM css_genie.payments.pay_applications pa
-                  JOIN css_genie.project_tracking.projects p
-                    ON pa.project_id = p.project_id
-                  WHERE pa.status IN ('submitted', 'approved')
-                  ORDER BY days_since_submitted DESC
-            - id: "149716c63c424159872a72c769e21867"
-              question:
-                - "How much retainage are we holding by project?"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    pa.project_id,
-                    SUM(pa.retainage_amount)    AS retainage_held,
-                    COUNT(pa.application_id)    AS application_count,
-                    SUM(pa.work_completed_to_date) AS billed_to_date
-                  FROM css_genie.payments.pay_applications pa
-                  JOIN css_genie.project_tracking.projects p
-                    ON pa.project_id = p.project_id
-                  WHERE pa.status != 'paid'
-                  GROUP BY p.project_name, pa.project_id
-                  ORDER BY retainage_held DESC
-            - id: "0092c638429a448fa3ae8fe7c65118e3"
-              question:
-                - "What is the average time from pay app submission to payment by project?"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    pa.project_id,
-                    COUNT(pa.application_id)                                  AS paid_applications,
-                    ROUND(AVG(DATEDIFF(pa.paid_date, pa.submitted_date)), 1)  AS avg_days_to_payment,
-                    MIN(DATEDIFF(pa.paid_date, pa.submitted_date))            AS min_days,
-                    MAX(DATEDIFF(pa.paid_date, pa.submitted_date))            AS max_days
-                  FROM css_genie.payments.pay_applications pa
-                  JOIN css_genie.project_tracking.projects p
-                    ON pa.project_id = p.project_id
-                  WHERE pa.paid_date IS NOT NULL
-                  GROUP BY p.project_name, pa.project_id
-                  ORDER BY avg_days_to_payment DESC

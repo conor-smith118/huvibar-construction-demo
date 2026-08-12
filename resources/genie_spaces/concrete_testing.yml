@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_concrete_testing:
-      display_name: "Huvibar | Concrete QA/QC"
+      title: "Huvibar | Concrete QA-QC"
       description: "Concrete mix design tracking, pour logs, cylinder break test results, and special inspection records for IBC compliance across Huvibar projects."
       warehouse_id: ${var.warehouse_id}
       serialized_space:
@@ -19,112 +19,28 @@ resources:
                 - "How many cubic yards of concrete have been placed by project and structural element?"
         data_sources:
           tables:
-            - identifier: "css_genie.concrete_testing.mix_designs"
-              description:
-                - "Approved concrete mix designs. Key fields: mix_id, project_id, mix_code, design_strength_psi, cement_type, water_cement_ratio, aggregate_size, approved_date."
-              column_configs:
-                - column_name: "design_strength_psi"
-                - column_name: "mix_code"
-                - column_name: "cement_type"
-            - identifier: "css_genie.concrete_testing.pour_logs"
-              description:
-                - "Individual concrete placement records. Key fields: pour_id, project_id, mix_id, pour_date, structural_element, location_description, cubic_yards_placed, slump_in, air_content_pct, concrete_temp_f, ambient_temp_f, inspector_name."
-              column_configs:
-                - column_name: "structural_element"
-                - column_name: "pour_date"
-                - column_name: "cubic_yards_placed"
-                - column_name: "slump_in"
-            - identifier: "css_genie.concrete_testing.cylinder_breaks"
-              description:
-                - "Compressive strength test results. Key fields: break_id, pour_id, project_id, mix_id, break_age_days, test_date, actual_strength_psi, design_strength_psi, percent_of_design (pre-calculated), pass_fail (pre-calculated: PASS if actual >= design)."
-              column_configs:
-                - column_name: "break_age_days"
-                - column_name: "pass_fail"
-                - column_name: "actual_strength_psi"
-                - column_name: "design_strength_psi"
-                - column_name: "percent_of_design"
             - identifier: "css_genie.concrete_testing.concrete_inspections"
               description:
                 - "Special inspection records. Key fields: inspection_id, project_id, pour_id, inspection_type, inspection_date, inspector_name, result, notes. inspection_type values: pre-pour, continuous, periodic, post-pour."
-              column_configs:
-                - column_name: "inspection_type"
-                - column_name: "inspection_date"
-                - column_name: "result"
+            - identifier: "css_genie.concrete_testing.cylinder_breaks"
+              description:
+                - "Compressive strength test results. Key fields: break_id, pour_id, project_id, mix_id, break_age_days, test_date, actual_strength_psi, design_strength_psi, percent_of_design (pre-calculated), pass_fail (pre-calculated: PASS if actual >= design)."
+            - identifier: "css_genie.concrete_testing.mix_designs"
+              description:
+                - "Approved concrete mix designs. Key fields: mix_id, project_id, mix_code, design_strength_psi, cement_type, water_cement_ratio, aggregate_size, approved_date."
+            - identifier: "css_genie.concrete_testing.pour_logs"
+              description:
+                - "Individual concrete placement records. Key fields: pour_id, project_id, mix_id, pour_date, structural_element, location_description, cubic_yards_placed, slump_in, air_content_pct, concrete_temp_f, ambient_temp_f, inspector_name."
             - identifier: "css_genie.project_tracking.projects"
               description:
                 - "Master project list. Key fields: project_id, project_name, status, contract_value, project_type, start_date, end_date, project_manager."
-              column_configs:
-                - column_name: "project_name"
-                - column_name: "status"
         instructions:
           text_instructions:
             - id: "7331630419574ff0a2434eb97d0d4631"
               content:
                 - "You are a concrete quality assurance and quality control analytics assistant for Huvibar Construction. Concrete testing is required by the International Building Code (IBC) and project structural specifications for all structural concrete placements."
                 - "CYLINDER BREAK TESTING: The official acceptance criterion is the 28-day compressive strength test. 7-day breaks are early indicators only — they typically reach 65-70% of 28-day design strength. Common break ages: 7, 14, 28, 56 days. Always filter by break_age_days = 28 for official acceptance analysis unless the user specifically requests other ages."
-                - "PASS/FAIL LOGIC: pass_fail is pre-calculated on the cylinder_breaks table — PASS if actual_strength_psi >= design_strength_psi, FAIL otherwise. percent_of_design = actual_strength_psi / design_strength_psi * 100 (also pre-calculated). A FAIL result requires engineer evaluation and may trigger core drilling or load testing."
+                - "PASS-FAIL LOGIC: pass_fail is pre-calculated on the cylinder_breaks table — PASS if actual_strength_psi >= design_strength_psi, FAIL otherwise. percent_of_design = actual_strength_psi divided by design_strength_psi * 100 (also pre-calculated). A FAIL result requires engineer evaluation and may trigger core drilling or load testing."
                 - "SPECIAL INSPECTIONS: Required by IBC Section 1705 for structural concrete (typically f'c >= 2500 psi or as specified by the engineer of record). inspection_type values: pre-pour (pre-placement inspection), continuous (inspector present throughout pour), periodic (intermittent checks), post-pour (placement records review)."
-                - "KEY METRICS: Pass rate = COUNT(pass_fail='PASS') / COUNT(*) * 100 for a given age and project. Total CY placed = SUM(cubic_yards_placed) from pour_logs — useful for progress and cost tracking. Strength trend = track percent_of_design over time to identify mix design or placement issues."
+                - "KEY METRICS: Pass rate = COUNT(pass_fail=PASS) * 100 divided by total COUNT for a given age and project. Total CY placed = SUM(cubic_yards_placed) from pour_logs — useful for progress and cost tracking. Strength trend = track percent_of_design over time to identify mix design or placement issues."
                 - "ANSWERING GUIDANCE: JOIN pour_logs to cylinder_breaks on pour_id to get placement details alongside test results. When users ask about specific structural elements (columns, beams, slabs, walls, footings), filter pour_logs.structural_element. 7-day results below 65% of design strength are a warning sign even if not a formal FAIL. For project context, always JOIN to css_genie.project_tracking.projects on project_id."
-          example_question_sqls:
-            - id: "3fbd69ab349b4337a1c1b0617af10a51"
-              question:
-                - "28-day cylinder break pass/fail rate by project"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    cb.project_id,
-                    COUNT(cb.break_id)                                       AS total_breaks,
-                    SUM(CASE WHEN cb.pass_fail = 'PASS' THEN 1 ELSE 0 END) AS pass_count,
-                    SUM(CASE WHEN cb.pass_fail = 'FAIL' THEN 1 ELSE 0 END) AS fail_count,
-                    ROUND(
-                      SUM(CASE WHEN cb.pass_fail = 'PASS' THEN 1 ELSE 0 END) * 100.0
-                      / NULLIF(COUNT(cb.break_id), 0),
-                    1) AS pass_rate_pct
-                  FROM css_genie.concrete_testing.cylinder_breaks cb
-                  JOIN css_genie.project_tracking.projects p
-                    ON cb.project_id = p.project_id
-                  WHERE cb.break_age_days = 28
-                  GROUP BY p.project_name, cb.project_id
-                  ORDER BY pass_rate_pct ASC
-            - id: "ba5fee849cf244469a39a3790bb6436f"
-              question:
-                - "Show me all failed 28-day cylinder breaks with pour details"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    pl.structural_element,
-                    pl.location_description,
-                    pl.pour_date,
-                    pl.cubic_yards_placed,
-                    cb.test_date,
-                    cb.design_strength_psi,
-                    cb.actual_strength_psi,
-                    ROUND(cb.percent_of_design, 1) AS percent_of_design,
-                    pl.inspector_name
-                  FROM css_genie.concrete_testing.cylinder_breaks cb
-                  JOIN css_genie.concrete_testing.pour_logs pl
-                    ON cb.pour_id = pl.pour_id
-                  JOIN css_genie.project_tracking.projects p
-                    ON cb.project_id = p.project_id
-                  WHERE cb.break_age_days = 28
-                    AND cb.pass_fail = 'FAIL'
-                  ORDER BY cb.percent_of_design ASC
-            - id: "4e3757fbb07d4b1ea634543600a00182"
-              question:
-                - "Cubic yards of concrete placed by project and structural element"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    pl.project_id,
-                    pl.structural_element,
-                    COUNT(pl.pour_id)                    AS pour_count,
-                    ROUND(SUM(pl.cubic_yards_placed), 1) AS total_cubic_yards
-                  FROM css_genie.concrete_testing.pour_logs pl
-                  JOIN css_genie.project_tracking.projects p
-                    ON pl.project_id = p.project_id
-                  GROUP BY p.project_name, pl.project_id, pl.structural_element
-                  ORDER BY p.project_name, total_cubic_yards DESC

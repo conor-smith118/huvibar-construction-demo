@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_safety:
-      display_name: "Huvibar | Safety & Compliance"
+      title: "Huvibar | Safety & Compliance"
       description: "OSHA incident rates (TRIR, LTIR, DART), toolbox talk compliance, safety inspection scores, and employee certification tracking across Huvibar's jobsites."
       warehouse_id: ${var.warehouse_id}
       serialized_space:
@@ -19,50 +19,25 @@ resources:
                 - "What's the average safety inspection score by project over the last 90 days?"
         data_sources:
           tables:
-            - identifier: "css_genie.safety_compliance.incidents"
-              description:
-                - "Incident records. Key fields: incident_id, project_id, employee_id, incident_date, incident_type, osha_recordable (boolean), lost_time (boolean), days_away, days_restricted, description, corrective_action."
-              column_configs:
-                - column_name: "incident_date"
-                - column_name: "osha_recordable"
-                - column_name: "lost_time"
-                - column_name: "incident_type"
-                - column_name: "days_away"
-            - identifier: "css_genie.safety_compliance.toolbox_talks"
-              description:
-                - "Safety meeting records. Key fields: talk_id, project_id, talk_date, topic, presenter, attendee_count, duration_minutes, foreman_signature."
-              column_configs:
-                - column_name: "talk_date"
-                - column_name: "attendee_count"
-                - column_name: "duration_minutes"
-                - column_name: "topic"
-            - identifier: "css_genie.safety_compliance.safety_inspections"
-              description:
-                - "Jobsite inspection records. Key fields: inspection_id, project_id, inspection_date, inspector_name, score (0-100), findings_count, corrective_actions_required. Score thresholds: 85-100 acceptable, 70-84 needs improvement, below 70 triggers corrective action plan."
-              column_configs:
-                - column_name: "inspection_date"
-                - column_name: "score"
-                - column_name: "findings_count"
-                - column_name: "corrective_actions_required"
-            - identifier: "css_genie.safety_compliance.certifications"
-              description:
-                - "Employee credential records. Key fields: cert_id, employee_id, cert_type, issued_date, expiry_date, status. Common cert_types: OSHA 10, OSHA 30, First Aid/CPR, Forklift, Rigging, Scaffold, Confined Space."
-              column_configs:
-                - column_name: "cert_type"
-                - column_name: "expiry_date"
-                - column_name: "status"
-            - identifier: "css_genie.project_tracking.projects"
-              description:
-                - "Master project list. Key fields: project_id, project_name, status, contract_value, project_type, start_date, end_date, project_manager."
-              column_configs:
-                - column_name: "project_name"
-                - column_name: "status"
             - identifier: "css_genie.project_tracking.employees"
               description:
                 - "Employee master record. Key fields: employee_id, first_name, last_name, role, department, trade, hire_date, employment_type, active."
-              column_configs:
-                - column_name: "trade"
-                - column_name: "active"
+            - identifier: "css_genie.project_tracking.projects"
+              description:
+                - "Master project list. Key fields: project_id, project_name, status, contract_value, project_type, start_date, end_date, project_manager."
+            - identifier: "css_genie.safety_compliance.certifications"
+              description:
+                - "Employee credential records. Key fields: cert_id, employee_id, cert_type, issued_date, expiry_date, status. Common cert_types: OSHA 10, OSHA 30, First Aid/CPR, Forklift, Rigging, Scaffold, Confined Space."
+            - identifier: "css_genie.safety_compliance.incidents"
+              description:
+                - "Incident records. Key fields: incident_id, project_id, employee_id, incident_date, incident_type, osha_recordable (boolean), lost_time (boolean), days_away, days_restricted, description, corrective_action."
+            - identifier: "css_genie.safety_compliance.safety_inspections"
+              description:
+                - "Jobsite inspection records. Key fields: inspection_id, project_id, inspection_date, inspector_name, score (0-100), findings_count, corrective_actions_required. Score thresholds: 85-100 acceptable, 70-84 needs improvement, below 70 triggers corrective action plan."
+            - identifier: "css_genie.safety_compliance.toolbox_talks"
+              description:
+                - "Safety meeting records. Key fields: talk_id, project_id, talk_date, topic, presenter, attendee_count, duration_minutes, foreman_signature."
+
         instructions:
           text_instructions:
             - id: "6e5832c3de9640d488b54d82469b97c1"
@@ -74,60 +49,3 @@ resources:
                 - "CERTIFICATION COMPLIANCE: Expired = expiry_date < current_date(). Expiring soon = expiry_date BETWEEN current_date() AND date_add(current_date(), 60). Common cert_types: OSHA 10, OSHA 30, First Aid/CPR, Forklift, Rigging, Scaffold, Confined Space. Filter to active employees (active = true) to exclude terminated workers."
                 - "SAFETY INSPECTION SCORING: Score 85-100 is acceptable. Score 70-84 needs improvement. Score below 70 triggers a mandatory corrective action plan. For trend analysis, group by inspection_date truncated to week or month."
                 - "ANSWERING GUIDANCE: JOIN employees on employee_id to show names in incident or certification queries. JOIN projects on project_id for project context. Toolbox talk training hours = attendee_count * duration_minutes / 60.0. For YTD, filter WHERE YEAR(date_field) = YEAR(current_date()). For trailing 90 days, use WHERE inspection_date >= date_sub(current_date(), 90)."
-          example_question_sqls:
-            - id: "c3d4e5f618500a9b12c3d4e5f6180509"
-              question:
-                - "TRIR year to date"
-              sql:
-                - |
-                  SELECT
-                    ROUND(
-                      COUNT(i.incident_id) * 200000.0
-                      / NULLIF((SELECT SUM(total_hours)
-                                FROM css_genie.scheduling.daily_manpower_log
-                                WHERE year(log_date) = year(current_date())), 0),
-                    2) AS ytd_trir,
-                    COUNT(i.incident_id) AS recordable_incidents,
-                    (SELECT SUM(total_hours)
-                     FROM css_genie.scheduling.daily_manpower_log
-                     WHERE year(log_date) = year(current_date())) AS total_hours_worked
-                  FROM css_genie.safety_compliance.incidents i
-                  WHERE i.osha_recordable = true
-                    AND year(i.incident_date) = year(current_date())
-            - id: "d4e5f629610b0ac223d4e5f629610b0a"
-              question:
-                - "Which employees have certifications expiring in the next 60 days?"
-              sql:
-                - |
-                  SELECT
-                    CONCAT(e.first_name, ' ', e.last_name) AS employee_name,
-                    e.trade,
-                    c.cert_type,
-                    c.expiry_date,
-                    DATEDIFF(c.expiry_date, current_date()) AS days_until_expiry
-                  FROM css_genie.safety_compliance.certifications c
-                  JOIN css_genie.project_tracking.employees e
-                    ON c.employee_id = e.employee_id
-                  WHERE c.expiry_date BETWEEN current_date()
-                      AND date_add(current_date(), 60)
-                    AND e.active = true
-                  ORDER BY c.expiry_date ASC
-            - id: "e5f6370a721c1bd334e5f6370a721c1b"
-              question:
-                - "Average safety inspection score by project over the last 90 days"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    si.project_id,
-                    COUNT(si.inspection_id)             AS inspection_count,
-                    ROUND(AVG(si.score), 1)             AS avg_score,
-                    MIN(si.score)                       AS min_score,
-                    SUM(si.findings_count)              AS total_findings,
-                    SUM(si.corrective_actions_required) AS total_corrective_actions
-                  FROM css_genie.safety_compliance.safety_inspections si
-                  JOIN css_genie.project_tracking.projects p
-                    ON si.project_id = p.project_id
-                  WHERE si.inspection_date >= date_sub(current_date(), 90)
-                  GROUP BY p.project_name, si.project_id
-                  ORDER BY avg_score ASC

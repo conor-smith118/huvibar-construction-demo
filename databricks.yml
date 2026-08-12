@@ -1,5 +1,6 @@
 bundle:
   name: huvibar-construction-demo
+  engine: direct
 
 variables:
   catalog:

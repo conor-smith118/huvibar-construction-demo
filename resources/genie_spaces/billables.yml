@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_billables:
-      display_name: "Huvibar | Billables & Invoicing"
+      title: "Huvibar | Billables & Invoicing"
       description: "Accounts receivable aging, invoice tracking, time-and-material billing, and change order billings across all Huvibar projects."
       warehouse_id: ${var.warehouse_id}
       serialized_space:
@@ -19,45 +19,21 @@ resources:
                 - "How much unbilled T&M work do we have approved but not yet invoiced?"
         data_sources:
           tables:
-            - identifier: "css_genie.billables.invoices"
-              description:
-                - "Invoice header records. Key fields: invoice_id, project_id, invoice_number, invoice_date, due_date, amount, status, days_outstanding. Status values: draft, sent, partial, paid, overdue."
-              column_configs:
-                - column_name: "status"
-                - column_name: "invoice_date"
-                - column_name: "due_date"
-                - column_name: "amount"
-                - column_name: "days_outstanding"
-            - identifier: "css_genie.billables.invoice_line_items"
-              description:
-                - "Line items associated with each invoice. Key fields: line_item_id, invoice_id, description, quantity, unit_price, line_total, cost_code, billing_type."
-              column_configs:
-                - column_name: "billing_type"
-                - column_name: "cost_code"
-                - column_name: "line_total"
-            - identifier: "css_genie.billables.time_and_material_tickets"
-              description:
-                - "T&M field tickets recording billable labor and material. Key fields: ticket_id, project_id, ticket_date, description, labor_hours, labor_rate, material_cost, total_amount, status, invoice_id. Status values: pending, approved, invoiced, rejected."
-              column_configs:
-                - column_name: "status"
-                - column_name: "ticket_date"
-                - column_name: "total_amount"
-                - column_name: "labor_hours"
-                - column_name: "invoice_id"
             - identifier: "css_genie.billables.change_order_billings"
               description:
                 - "Billing records for approved change orders. Key fields: co_billing_id, project_id, change_order_id, billed_amount, invoice_id, billing_date, status."
-              column_configs:
-                - column_name: "status"
-                - column_name: "billed_amount"
-                - column_name: "billing_date"
+            - identifier: "css_genie.billables.invoice_line_items"
+              description:
+                - "Line items associated with each invoice. Key fields: line_item_id, invoice_id, description, quantity, unit_price, line_total, cost_code, billing_type."
+            - identifier: "css_genie.billables.invoices"
+              description:
+                - "Invoice header records. Key fields: invoice_id, project_id, invoice_number, invoice_date, due_date, amount, status, days_outstanding. Status values: draft, sent, partial, paid, overdue."
+            - identifier: "css_genie.billables.time_and_material_tickets"
+              description:
+                - "T&M field tickets recording billable labor and material. Key fields: ticket_id, project_id, ticket_date, description, labor_hours, labor_rate, material_cost, total_amount, status, invoice_id. Status values: pending, approved, invoiced, rejected."
             - identifier: "css_genie.project_tracking.projects"
               description:
                 - "Master project list. Key fields: project_id, project_name, status, contract_value, project_type, start_date, end_date, project_manager."
-              column_configs:
-                - column_name: "project_name"
-                - column_name: "status"
-                - column_name: "contract_value"
         instructions:
           text_instructions:
             - id: "ee34b1f56a1b4b4e847e89548874ba67"
@@ -68,59 +44,3 @@ resources:
                 - "UNBILLED T&M: T&M tickets with status='approved' and invoice_id IS NULL represent work completed and approved but not yet billed. This is a key metric — it shows revenue that can be invoiced immediately."
                 - "KEY METRICS: AR balance by project = SUM(amount) WHERE status IN ('sent','partial','overdue'). Overdue invoices = WHERE status='overdue' OR (due_date < current_date() AND status NOT IN ('paid','draft')). Unbilled T&M = SUM(total_amount) WHERE status='approved' AND invoice_id IS NULL."
                 - "ANSWERING GUIDANCE: Always JOIN invoices to css_genie.project_tracking.projects on project_id for named project context. For AR aging, use days_outstanding from the invoices table directly rather than computing from dates. Change order billings require joining to projects for project names."
-          example_question_sqls:
-            - id: "7d8efe8ab9b6441a8183ac42eaf4f9d5"
-              question:
-                - "AR aging summary by project and bucket"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    SUM(CASE WHEN i.days_outstanding BETWEEN 0 AND 30  THEN i.amount ELSE 0 END) AS current_0_30,
-                    SUM(CASE WHEN i.days_outstanding BETWEEN 31 AND 60 THEN i.amount ELSE 0 END) AS aging_31_60,
-                    SUM(CASE WHEN i.days_outstanding BETWEEN 61 AND 90 THEN i.amount ELSE 0 END) AS aging_61_90,
-                    SUM(CASE WHEN i.days_outstanding > 90             THEN i.amount ELSE 0 END) AS aging_90_plus,
-                    SUM(i.amount) AS total_ar
-                  FROM css_genie.billables.invoices i
-                  JOIN css_genie.project_tracking.projects p
-                    ON i.project_id = p.project_id
-                  WHERE i.status NOT IN ('paid', 'draft')
-                  GROUP BY p.project_name
-                  ORDER BY total_ar DESC
-            - id: "2317c832cf4a4fe5a9850c2d780a48da"
-              question:
-                - "Which invoices are more than 60 days overdue?"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    i.invoice_number,
-                    i.invoice_date,
-                    i.due_date,
-                    i.amount,
-                    i.days_outstanding,
-                    i.status
-                  FROM css_genie.billables.invoices i
-                  JOIN css_genie.project_tracking.projects p
-                    ON i.project_id = p.project_id
-                  WHERE i.days_outstanding > 60
-                    AND i.status NOT IN ('paid', 'draft')
-                  ORDER BY i.days_outstanding DESC
-            - id: "619ca4cac73b4f2cab238e4f74d959cc"
-              question:
-                - "How much approved but unbilled T&M work do we have by project?"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    tmt.project_id,
-                    COUNT(tmt.ticket_id)     AS ticket_count,
-                    SUM(tmt.labor_hours)     AS unbilled_labor_hours,
-                    SUM(tmt.total_amount)    AS unbilled_amount
-                  FROM css_genie.billables.time_and_material_tickets tmt
-                  JOIN css_genie.project_tracking.projects p
-                    ON tmt.project_id = p.project_id
-                  WHERE tmt.status = 'approved'
-                    AND tmt.invoice_id IS NULL
-                  GROUP BY p.project_name, tmt.project_id
-                  ORDER BY unbilled_amount DESC

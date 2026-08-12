@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_cost_reporting:
-      display_name: "Huvibar | Cost Reporting & Forecasting"
+      title: "Huvibar | Cost Reporting & Forecasting"
       description: "Budget vs. actual vs. forecast cost control, EAC variance analysis, change order exposure, and monthly burn rate reporting across Huvibar projects."
       warehouse_id: ${var.warehouse_id}
       serialized_space:
@@ -19,50 +19,24 @@ resources:
                 - "Show me the top 10 cost overruns by cost code"
         data_sources:
           tables:
-            - identifier: "css_genie.cost_reporting.budget_line_items"
-              description:
-                - "Original and revised budget by project and cost code. Key fields: project_id, cost_code_id, cost_type, original_budget, approved_changes, current_budget."
-              column_configs:
-                - column_name: "cost_code_id"
-                - column_name: "cost_type"
-                - column_name: "current_budget"
-                - column_name: "original_budget"
-            - identifier: "css_genie.cost_reporting.committed_costs"
-              description:
-                - "Subcontract and purchase order commitments. Key fields: project_id, cost_code_id, commitment_type, vendor, committed_amount, invoiced_to_date."
-              column_configs:
-                - column_name: "commitment_type"
-                - column_name: "committed_amount"
-                - column_name: "invoiced_to_date"
             - identifier: "css_genie.cost_reporting.actual_costs"
               description:
                 - "Posted cost transactions. Key fields: project_id, cost_code_id, cost_type, transaction_date, amount, vendor, description."
-              column_configs:
-                - column_name: "transaction_date"
-                - column_name: "amount"
-                - column_name: "cost_type"
-            - identifier: "css_genie.cost_reporting.cost_forecast"
+            - identifier: "css_genie.cost_reporting.budget_line_items"
               description:
-                - "Forward-looking cost estimates. Key fields: project_id, cost_code_id, actual_to_date, estimate_to_complete, estimate_at_completion, variance_amount, variance_pct."
-              column_configs:
-                - column_name: "estimate_at_completion"
-                - column_name: "estimate_to_complete"
-                - column_name: "variance_amount"
-                - column_name: "variance_pct"
+                - "Original and revised budget by project and cost code. Key fields: project_id, cost_code_id, cost_type, original_budget, approved_changes, current_budget."
             - identifier: "css_genie.cost_reporting.change_orders"
               description:
                 - "Owner change orders affecting budget. Key fields: project_id, co_number, description, amount, status, approved_date. Only status='approved' change orders are reflected in current_budget."
-              column_configs:
-                - column_name: "status"
-                - column_name: "amount"
-                - column_name: "approved_date"
+            - identifier: "css_genie.cost_reporting.committed_costs"
+              description:
+                - "Subcontract and purchase order commitments. Key fields: project_id, cost_code_id, commitment_type, vendor, committed_amount, invoiced_to_date."
+            - identifier: "css_genie.cost_reporting.cost_forecast"
+              description:
+                - "Forward-looking cost estimates. Key fields: project_id, cost_code_id, actual_to_date, estimate_to_complete, estimate_at_completion, variance_amount, variance_pct."
             - identifier: "css_genie.project_tracking.projects"
               description:
                 - "Master project list. Key fields: project_id, project_name, status, contract_value, project_type, start_date, end_date, project_manager."
-              column_configs:
-                - column_name: "project_name"
-                - column_name: "status"
-                - column_name: "contract_value"
         instructions:
           text_instructions:
             - id: "6a2b4317e119424a9e574efde476735e"
@@ -73,60 +47,3 @@ resources:
                 - "COST TYPES: labor, material, equipment, subcontractor (sub), other. CSI MasterFormat divisions 01-16 are used (e.g., 03 = Concrete, 05 = Metals, 09 = Finishes). When users reference division names, join to cost_codes on cost_code_id."
                 - "CHANGE ORDERS: Positive amount = owner-approved scope addition that increases budget. Negative amount = credit or deduction. Only status='approved' change orders are reflected in current_budget. Pending change orders represent unbooked cost exposure."
                 - "ANSWERING GUIDANCE: For over-budget questions, compute variance as current_budget - estimate_at_completion and filter where that is positive (over budget). variance_pct in cost_forecast is pre-calculated. For burn rate, GROUP BY date_trunc('month', transaction_date) on actual_costs. Always JOIN to css_genie.project_tracking.projects for project names."
-          example_question_sqls:
-            - id: "4c5ce7fef3c64d9b89881c69e38ebe29"
-              question:
-                - "Budget vs actual vs forecast by project — which are over budget?"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    bli.project_id,
-                    ROUND(SUM(bli.current_budget), 2)        AS current_budget,
-                    ROUND(SUM(cf.actual_to_date), 2)         AS actual_to_date,
-                    ROUND(SUM(cf.estimate_at_completion), 2) AS estimate_at_completion,
-                    ROUND(SUM(bli.current_budget) - SUM(cf.estimate_at_completion), 2) AS variance_amount,
-                    ROUND(
-                      (SUM(bli.current_budget) - SUM(cf.estimate_at_completion)) /
-                      NULLIF(SUM(bli.current_budget), 0) * 100,
-                    1) AS variance_pct
-                  FROM css_genie.cost_reporting.budget_line_items bli
-                  JOIN css_genie.project_tracking.projects p
-                    ON bli.project_id = p.project_id
-                  LEFT JOIN css_genie.cost_reporting.cost_forecast cf
-                    ON bli.project_id = cf.project_id AND bli.cost_code_id = cf.cost_code_id
-                  GROUP BY p.project_name, bli.project_id
-                  ORDER BY variance_amount DESC
-            - id: "ed6835a70ebb4a48879cd226e2794245"
-              question:
-                - "Monthly actual cost burn rate over the last 3 months"
-              sql:
-                - |
-                  SELECT
-                    date_trunc('month', transaction_date)  AS month,
-                    ROUND(SUM(amount), 2)                  AS total_actual_cost,
-                    COUNT(DISTINCT project_id)             AS active_projects
-                  FROM css_genie.cost_reporting.actual_costs
-                  WHERE transaction_date >= add_months(date_trunc('month', current_date()), -3)
-                  GROUP BY date_trunc('month', transaction_date)
-                  ORDER BY month ASC
-            - id: "960e95be1c5148158e6b8add866b34bb"
-              question:
-                - "Top 10 cost overruns by cost code across all projects"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    cf.cost_code_id,
-                    ROUND(bli.current_budget, 2)         AS current_budget,
-                    ROUND(cf.estimate_at_completion, 2)  AS estimate_at_completion,
-                    ROUND(cf.variance_amount, 2)         AS variance_amount,
-                    ROUND(cf.variance_pct, 1)            AS variance_pct
-                  FROM css_genie.cost_reporting.cost_forecast cf
-                  JOIN css_genie.cost_reporting.budget_line_items bli
-                    ON cf.project_id = bli.project_id AND cf.cost_code_id = bli.cost_code_id
-                  JOIN css_genie.project_tracking.projects p
-                    ON cf.project_id = p.project_id
-                  WHERE cf.variance_amount > 0
-                  ORDER BY cf.variance_amount DESC
-                  LIMIT 10

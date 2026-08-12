@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_contracts:
-      display_name: "Huvibar | Contract Management"
+      title: "Huvibar | Contract Management"
       description: "Prime contract, subcontract, and purchase order management including insurance verification, bonding compliance, change order exposure, and delivery tracking."
       warehouse_id: ${var.warehouse_id}
       serialized_space:
@@ -19,49 +19,24 @@ resources:
                 - "Show me all open purchase orders with expected delivery dates that have passed"
         data_sources:
           tables:
-            - identifier: "css_genie.contracts.prime_contracts"
-              description:
-                - "Owner agreements. Key fields: contract_id, project_id, contract_type, original_amount, executed_date, notes. Contract types: GMP, Lump Sum, T&M, Unit Price."
-              column_configs:
-                - column_name: "contract_type"
-                - column_name: "original_amount"
-                - column_name: "executed_date"
-            - identifier: "css_genie.contracts.subcontracts"
-              description:
-                - "Subcontractor agreements. Key fields: subcontract_id, project_id, sub_id, scope_description, original_value, current_value, execution_date, insurance_verified_date, bond_required, bond_amount, status."
-              column_configs:
-                - column_name: "status"
-                - column_name: "current_value"
-                - column_name: "insurance_verified_date"
-                - column_name: "bond_required"
-            - identifier: "css_genie.contracts.purchase_orders"
-              description:
-                - "Material and equipment orders. Key fields: po_id, project_id, vendor, po_amount, issue_date, required_delivery_date, actual_delivery_date, status. Status values: issued, partial_receipt, received, paid, cancelled."
-              column_configs:
-                - column_name: "status"
-                - column_name: "required_delivery_date"
-                - column_name: "actual_delivery_date"
-                - column_name: "po_amount"
             - identifier: "css_genie.contracts.contract_amendments"
               description:
                 - "Modifications to contracts and subcontracts. Key fields: amendment_id, contract_id, subcontract_id, project_id, description, amount, executed_date, status. Positive amount = scope addition. Negative = credit. Only status='approved' amendments are reflected in current contract values."
-              column_configs:
-                - column_name: "status"
-                - column_name: "amount"
-                - column_name: "executed_date"
+            - identifier: "css_genie.contracts.prime_contracts"
+              description:
+                - "Owner agreements. Key fields: contract_id, project_id, contract_type, original_amount, executed_date, notes. Contract types: GMP, Lump Sum, T&M, Unit Price."
+            - identifier: "css_genie.contracts.purchase_orders"
+              description:
+                - "Material and equipment orders. Key fields: po_id, project_id, vendor, po_amount, issue_date, required_delivery_date, actual_delivery_date, status. Status values: issued, partial_receipt, received, paid, cancelled."
+            - identifier: "css_genie.contracts.subcontracts"
+              description:
+                - "Subcontractor agreements. Key fields: subcontract_id, project_id, sub_id, scope_description, original_value, current_value, execution_date, insurance_verified_date, bond_required, bond_amount, status."
             - identifier: "css_genie.project_tracking.projects"
               description:
                 - "Master project list. Key fields: project_id, project_name, status, contract_value, project_type, start_date, end_date, project_manager."
-              column_configs:
-                - column_name: "project_name"
-                - column_name: "status"
             - identifier: "css_genie.project_tracking.subcontractors"
               description:
                 - "Subcontractor master record. Key fields: sub_id, company_name, trade, tier, insurance_expiry, bond_company, status."
-              column_configs:
-                - column_name: "company_name"
-                - column_name: "trade"
-                - column_name: "insurance_expiry"
         instructions:
           text_instructions:
             - id: "8504db6795f94941bbe9e7b10f29276c"
@@ -72,63 +47,3 @@ resources:
                 - "PURCHASE ORDER STATUS: issued → partial_receipt → received → paid (or cancelled). A PO is overdue when required_delivery_date < current_date() AND actual_delivery_date IS NULL AND status NOT IN ('received', 'paid', 'cancelled')."
                 - "CONTRACT AMENDMENTS: amount > 0 = scope addition (increases contract value). amount < 0 = credit or deduction. Only status='approved' amendments are reflected in current contract values. Pending amendments represent unbooked exposure."
                 - "ANSWERING GUIDANCE: For insurance expiration, use insurance_expiry from the subcontractors table and compare to current_date() + 30 days using date_add(current_date(), 30). For change order totals by project, SUM(amount) from contract_amendments WHERE status='approved' GROUP BY project_id. Always JOIN subcontractors to get company names from subcontract records."
-          example_question_sqls:
-            - id: "b4d02f4e474241cc87ffc21cacd515ca"
-              question:
-                - "Which subcontractors have insurance expiring in the next 30 days?"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    s.company_name,
-                    s.trade,
-                    sc.current_value,
-                    s.insurance_expiry                            AS insurance_expiry_date,
-                    DATEDIFF(s.insurance_expiry, current_date()) AS days_until_expiry
-                  FROM css_genie.contracts.subcontracts sc
-                  JOIN css_genie.project_tracking.subcontractors s
-                    ON sc.sub_id = s.sub_id
-                  JOIN css_genie.project_tracking.projects p
-                    ON sc.project_id = p.project_id
-                  WHERE sc.status NOT IN ('completed', 'cancelled')
-                    AND s.insurance_expiry <= date_add(current_date(), 30)
-                  ORDER BY insurance_expiry_date ASC
-            - id: "e58f6629851842f6b9db6bbfc5a298e3"
-              question:
-                - "Total value of approved change orders by project"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    ca.project_id,
-                    SUM(CASE WHEN ca.amount > 0 THEN ca.amount ELSE 0 END) AS total_additions,
-                    SUM(CASE WHEN ca.amount < 0 THEN ca.amount ELSE 0 END) AS total_credits,
-                    SUM(ca.amount)                                          AS net_change_order_value,
-                    COUNT(ca.amendment_id)                                  AS amendment_count
-                  FROM css_genie.contracts.contract_amendments ca
-                  JOIN css_genie.project_tracking.projects p
-                    ON ca.project_id = p.project_id
-                  WHERE ca.status = 'approved'
-                  GROUP BY p.project_name, ca.project_id
-                  ORDER BY net_change_order_value DESC
-            - id: "bb397fd596b24dc79cbef3999367833a"
-              question:
-                - "All open purchase orders with delivery dates that have already passed"
-              sql:
-                - |
-                  SELECT
-                    p.project_name,
-                    po.vendor,
-                    po.po_amount,
-                    po.issue_date,
-                    po.required_delivery_date,
-                    po.actual_delivery_date,
-                    po.status,
-                    DATEDIFF(current_date(), po.required_delivery_date) AS days_overdue
-                  FROM css_genie.contracts.purchase_orders po
-                  JOIN css_genie.project_tracking.projects p
-                    ON po.project_id = p.project_id
-                  WHERE po.status NOT IN ('received', 'paid', 'cancelled')
-                    AND po.required_delivery_date < current_date()
-                    AND po.actual_delivery_date IS NULL
-                  ORDER BY days_overdue DESC
