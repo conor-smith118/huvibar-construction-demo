@@ -204,7 +204,7 @@ STRUCTURAL_ELEMENTS = [
     ("column", 10, 60, 0.10),
     ("wall", 20, 150, 0.12),
     ("beam", 15, 80, 0.05),
-)
+]
 
 LOCATION_TEMPLATES = [
     "Grid {col}-{row} Level {lvl} Slab",
