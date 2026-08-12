@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_cost_reporting:
-      title: "Huvibar | Cost Reporting & Forecasting"
+      title: "Cost Reporting & Forecasting"
       description: "Budget vs. actual vs. forecast cost control, EAC variance analysis, change order exposure, and monthly burn rate reporting across Huvibar projects."
       warehouse_id: ${var.warehouse_id}
       serialized_space:

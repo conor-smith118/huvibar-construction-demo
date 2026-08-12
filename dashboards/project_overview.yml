@@ -1,7 +1,7 @@
 resources:
   dashboards:
     huvibar_dashboard_project_overview:
-      display_name: "Huvibar | Project Overview"
+      display_name: "Project Overview"
       warehouse_id: ${var.warehouse_id}
       file_path: ./project_overview.lvdash.json
       parent_path: /Shared/Huvibar-Construction-Demo

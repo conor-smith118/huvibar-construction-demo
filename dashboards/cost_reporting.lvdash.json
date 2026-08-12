@@ -86,7 +86,6 @@
           },
           "widget": {
             "name": "kpi_bud",
-            "title": "Total Budget ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -110,6 +109,10 @@
                   "fieldName": "budget_m",
                   "displayName": "Total Budget ($M)"
                 }
+              },
+              "frame": {
+                "title": "Total Budget ($M)",
+                "showTitle": true
               }
             }
           }
@@ -123,7 +126,6 @@
           },
           "widget": {
             "name": "kpi_act",
-            "title": "Total Actuals ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -147,6 +149,10 @@
                   "fieldName": "actuals_m",
                   "displayName": "Total Actuals ($M)"
                 }
+              },
+              "frame": {
+                "title": "Total Actuals ($M)",
+                "showTitle": true
               }
             }
           }
@@ -160,7 +166,6 @@
           },
           "widget": {
             "name": "kpi_co",
-            "title": "Approved COs ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -184,6 +189,10 @@
                   "fieldName": "co_m",
                   "displayName": "Approved COs ($M)"
                 }
+              },
+              "frame": {
+                "title": "Approved COs ($M)",
+                "showTitle": true
               }
             }
           }
@@ -197,7 +206,6 @@
           },
           "widget": {
             "name": "kpi_com",
-            "title": "Committed ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -221,6 +229,10 @@
                   "fieldName": "committed_m",
                   "displayName": "Committed ($M)"
                 }
+              },
+              "frame": {
+                "title": "Committed ($M)",
+                "showTitle": true
               }
             }
           }
@@ -234,7 +246,6 @@
           },
           "widget": {
             "name": "pie_type",
-            "title": "Actual Costs by Type",
             "queries": [
               {
                 "name": "main_query",
@@ -242,30 +253,49 @@
                   "datasetName": "cost_type",
                   "fields": [
                     {
-                      "name": "cost_type",
-                      "expression": "`cost_type`"
-                    },
-                    {
                       "name": "total_m",
                       "expression": "`total_m`"
+                    },
+                    {
+                      "name": "cost_type",
+                      "expression": "`cost_type`"
                     }
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
                 }
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "pie",
               "encodings": {
-                "label": {
-                  "fieldName": "cost_type",
-                  "displayName": "Cost Type"
-                },
-                "value": {
+                "angle": {
                   "fieldName": "total_m",
-                  "displayName": "Total M"
+                  "displayName": "Total M",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "hideTitle": true
+                  }
+                },
+                "color": {
+                  "fieldName": "cost_type",
+                  "displayName": "Cost Type",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "legend": {
+                    "hideTitle": true
+                  }
+                },
+                "label": {
+                  "show": true
                 }
+              },
+              "frame": {
+                "title": "Actual Costs by Type",
+                "showTitle": true
               }
             }
           }
@@ -279,7 +309,6 @@
           },
           "widget": {
             "name": "line_burn",
-            "title": "Monthly Spend Trend ($M) \u2014 Last 12 Months",
             "queries": [
               {
                 "name": "main_query",
@@ -295,12 +324,12 @@
                       "expression": "`spend_m`"
                     }
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
                 }
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "line",
               "encodings": {
                 "x": {
@@ -312,8 +341,15 @@
                 },
                 "y": {
                   "fieldName": "spend_m",
-                  "displayName": "Spend M"
+                  "displayName": "Spend M",
+                  "scale": {
+                    "type": "quantitative"
+                  }
                 }
+              },
+              "frame": {
+                "title": "Monthly Spend ($M) \u2014 Last 12 Months",
+                "showTitle": true
               }
             }
           }
@@ -327,7 +363,6 @@
           },
           "widget": {
             "name": "bar_bva",
-            "title": "Budget vs Actual by Project ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -348,17 +383,27 @@
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "Project Name"
+                  "displayName": "Project Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
                 },
                 "y": {
                   "fieldName": "budget_m",
-                  "displayName": "Budget M"
+                  "displayName": "Budget M",
+                  "scale": {
+                    "type": "quantitative"
+                  }
                 }
+              },
+              "frame": {
+                "title": "Budget vs Actual by Project ($M)",
+                "showTitle": true
               }
             }
           }
@@ -372,7 +417,6 @@
           },
           "widget": {
             "name": "bar_co",
-            "title": "Change Orders by Project ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -393,17 +437,27 @@
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "Project Name"
+                  "displayName": "Project Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
                 },
                 "y": {
                   "fieldName": "co_m",
-                  "displayName": "Co M"
+                  "displayName": "Co M",
+                  "scale": {
+                    "type": "quantitative"
+                  }
                 }
+              },
+              "frame": {
+                "title": "Approved Change Orders by Project ($M)",
+                "showTitle": true
               }
             }
           }
@@ -417,7 +471,6 @@
           },
           "widget": {
             "name": "pie_co",
-            "title": "Change Orders by Reason",
             "queries": [
               {
                 "name": "main_query",
@@ -425,30 +478,49 @@
                   "datasetName": "co_reason",
                   "fields": [
                     {
-                      "name": "reason_code",
-                      "expression": "`reason_code`"
-                    },
-                    {
                       "name": "total_m",
                       "expression": "`total_m`"
+                    },
+                    {
+                      "name": "reason_code",
+                      "expression": "`reason_code`"
                     }
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
                 }
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "pie",
               "encodings": {
-                "label": {
-                  "fieldName": "reason_code",
-                  "displayName": "Reason Code"
-                },
-                "value": {
+                "angle": {
                   "fieldName": "total_m",
-                  "displayName": "Total M"
+                  "displayName": "Total M",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "hideTitle": true
+                  }
+                },
+                "color": {
+                  "fieldName": "reason_code",
+                  "displayName": "Reason Code",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "legend": {
+                    "hideTitle": true
+                  }
+                },
+                "label": {
+                  "show": true
                 }
+              },
+              "frame": {
+                "title": "Change Orders by Reason",
+                "showTitle": true
               }
             }
           }
@@ -462,7 +534,6 @@
           },
           "widget": {
             "name": "bar_vend",
-            "title": "Top Subcontractor Spend ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -483,17 +554,27 @@
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "vendor_name",
-                  "displayName": "Vendor Name"
+                  "displayName": "Vendor Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
                 },
                 "y": {
                   "fieldName": "spend_m",
-                  "displayName": "Spend M"
+                  "displayName": "Spend M",
+                  "scale": {
+                    "type": "quantitative"
+                  }
                 }
+              },
+              "frame": {
+                "title": "Top Subcontractor Spend ($M)",
+                "showTitle": true
               }
             }
           }

@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_safety:
-      title: "Huvibar | Safety & Compliance"
+      title: "Safety & Compliance"
       description: "OSHA incident rates (TRIR, LTIR, DART), toolbox talk compliance, safety inspection scores, and employee certification tracking across Huvibar's jobsites."
       warehouse_id: ${var.warehouse_id}
       serialized_space:

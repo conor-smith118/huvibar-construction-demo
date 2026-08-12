@@ -86,7 +86,6 @@
           },
           "widget": {
             "name": "c_active",
-            "title": "Active Projects",
             "queries": [
               {
                 "name": "main_query",
@@ -110,6 +109,10 @@
                   "fieldName": "count",
                   "displayName": "Active Projects"
                 }
+              },
+              "frame": {
+                "title": "Active Projects",
+                "showTitle": true
               }
             }
           }
@@ -123,7 +126,6 @@
           },
           "widget": {
             "name": "c_value",
-            "title": "Portfolio Value ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -147,6 +149,10 @@
                   "fieldName": "value_m",
                   "displayName": "Portfolio Value ($M)"
                 }
+              },
+              "frame": {
+                "title": "Portfolio Value ($M)",
+                "showTitle": true
               }
             }
           }
@@ -160,7 +166,6 @@
           },
           "widget": {
             "name": "c_rfis",
-            "title": "Open RFIs",
             "queries": [
               {
                 "name": "main_query",
@@ -184,6 +189,10 @@
                   "fieldName": "rfi_count",
                   "displayName": "Open RFIs"
                 }
+              },
+              "frame": {
+                "title": "Open RFIs",
+                "showTitle": true
               }
             }
           }
@@ -197,7 +206,6 @@
           },
           "widget": {
             "name": "c_subs",
-            "title": "Pending Submittals",
             "queries": [
               {
                 "name": "main_query",
@@ -221,6 +229,10 @@
                   "fieldName": "sub_count",
                   "displayName": "Pending Submittals"
                 }
+              },
+              "frame": {
+                "title": "Pending Submittals",
+                "showTitle": true
               }
             }
           }
@@ -234,7 +246,6 @@
           },
           "widget": {
             "name": "bar_type",
-            "title": "Contract Value by Project Type ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -255,17 +266,27 @@
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "project_type",
-                  "displayName": "Project Type"
+                  "displayName": "Project Type",
+                  "scale": {
+                    "type": "categorical"
+                  }
                 },
                 "y": {
                   "fieldName": "value_m",
-                  "displayName": "Value M"
+                  "displayName": "Value M",
+                  "scale": {
+                    "type": "quantitative"
+                  }
                 }
+              },
+              "frame": {
+                "title": "Contract Value by Project Type ($M)",
+                "showTitle": true
               }
             }
           }
@@ -279,7 +300,6 @@
           },
           "widget": {
             "name": "pie_status",
-            "title": "Portfolio Status Split",
             "queries": [
               {
                 "name": "main_query",
@@ -287,30 +307,49 @@
                   "datasetName": "status_split",
                   "fields": [
                     {
-                      "name": "status",
-                      "expression": "`status`"
-                    },
-                    {
                       "name": "cnt",
                       "expression": "`cnt`"
+                    },
+                    {
+                      "name": "status",
+                      "expression": "`status`"
                     }
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
                 }
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "pie",
               "encodings": {
-                "label": {
-                  "fieldName": "status",
-                  "displayName": "Status"
-                },
-                "value": {
+                "angle": {
                   "fieldName": "cnt",
-                  "displayName": "Cnt"
+                  "displayName": "Cnt",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "hideTitle": true
+                  }
+                },
+                "color": {
+                  "fieldName": "status",
+                  "displayName": "Status",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "legend": {
+                    "hideTitle": true
+                  }
+                },
+                "label": {
+                  "show": true
                 }
+              },
+              "frame": {
+                "title": "Portfolio Status Split",
+                "showTitle": true
               }
             }
           }
@@ -324,7 +363,6 @@
           },
           "widget": {
             "name": "bar_pct",
-            "title": "% Complete by Project",
             "queries": [
               {
                 "name": "main_query",
@@ -345,17 +383,27 @@
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "Project Name"
+                  "displayName": "Project Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
                 },
                 "y": {
                   "fieldName": "pct_complete",
-                  "displayName": "Pct Complete"
+                  "displayName": "Pct Complete",
+                  "scale": {
+                    "type": "quantitative"
+                  }
                 }
+              },
+              "frame": {
+                "title": "% Complete by Active Project",
+                "showTitle": true
               }
             }
           }
@@ -369,7 +417,6 @@
           },
           "widget": {
             "name": "bar_rfis",
-            "title": "Open RFIs by Project",
             "queries": [
               {
                 "name": "main_query",
@@ -390,17 +437,27 @@
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "Project Name"
+                  "displayName": "Project Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
                 },
                 "y": {
                   "fieldName": "open_rfis",
-                  "displayName": "Open Rfis"
+                  "displayName": "Open Rfis",
+                  "scale": {
+                    "type": "quantitative"
+                  }
                 }
+              },
+              "frame": {
+                "title": "Open RFIs by Project",
+                "showTitle": true
               }
             }
           }
@@ -413,8 +470,7 @@
             "height": 5
           },
           "widget": {
-            "name": "pie_rfi_age",
-            "title": "RFI Age Distribution",
+            "name": "pie_rfi",
             "queries": [
               {
                 "name": "main_query",
@@ -422,30 +478,49 @@
                   "datasetName": "rfi_aging",
                   "fields": [
                     {
-                      "name": "urgency",
-                      "expression": "`urgency`"
-                    },
-                    {
                       "name": "cnt",
                       "expression": "`cnt`"
+                    },
+                    {
+                      "name": "urgency",
+                      "expression": "`urgency`"
                     }
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
                 }
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "pie",
               "encodings": {
-                "label": {
-                  "fieldName": "urgency",
-                  "displayName": "Urgency"
-                },
-                "value": {
+                "angle": {
                   "fieldName": "cnt",
-                  "displayName": "Cnt"
+                  "displayName": "Cnt",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "hideTitle": true
+                  }
+                },
+                "color": {
+                  "fieldName": "urgency",
+                  "displayName": "Urgency",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "legend": {
+                    "hideTitle": true
+                  }
+                },
+                "label": {
+                  "show": true
                 }
+              },
+              "frame": {
+                "title": "RFI Age Distribution",
+                "showTitle": true
               }
             }
           }
@@ -459,7 +534,6 @@
           },
           "widget": {
             "name": "line_starts",
-            "title": "Projects Started by Quarter",
             "queries": [
               {
                 "name": "main_query",
@@ -475,12 +549,12 @@
                       "expression": "`started`"
                     }
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
                 }
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "line",
               "encodings": {
                 "x": {
@@ -492,8 +566,15 @@
                 },
                 "y": {
                   "fieldName": "started",
-                  "displayName": "Started"
+                  "displayName": "Started",
+                  "scale": {
+                    "type": "quantitative"
+                  }
                 }
+              },
+              "frame": {
+                "title": "Projects Started by Quarter",
+                "showTitle": true
               }
             }
           }

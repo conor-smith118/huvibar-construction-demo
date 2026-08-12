@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_concrete_testing:
-      title: "Huvibar | Concrete QA-QC"
+      title: "Concrete QA-QC"
       description: "Concrete mix design tracking, pour logs, cylinder break test results, and special inspection records for IBC compliance across Huvibar projects."
       warehouse_id: ${var.warehouse_id}
       serialized_space:

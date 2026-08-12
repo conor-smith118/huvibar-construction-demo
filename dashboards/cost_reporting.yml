@@ -1,7 +1,7 @@
 resources:
   dashboards:
     huvibar_dashboard_cost_reporting:
-      display_name: "Huvibar | Cost Reporting"
+      display_name: "Cost Reporting"
       warehouse_id: ${var.warehouse_id}
       file_path: ./cost_reporting.lvdash.json
       parent_path: /Shared/Huvibar-Construction-Demo

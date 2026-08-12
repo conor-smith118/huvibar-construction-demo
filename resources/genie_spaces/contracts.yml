@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_contracts:
-      title: "Huvibar | Contract Management"
+      title: "Contract Management"
       description: "Prime contract, subcontract, and purchase order management including insurance verification, bonding compliance, change order exposure, and delivery tracking."
       warehouse_id: ${var.warehouse_id}
       serialized_space:

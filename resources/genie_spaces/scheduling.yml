@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_scheduling:
-      title: "Huvibar | Scheduling & Workforce"
+      title: "Scheduling & Workforce"
       description: "Daily crew assignments, equipment logs, subcontractor schedules, and manpower utilization across Huvibar's 25 active projects."
       warehouse_id: ${var.warehouse_id}
       serialized_space:

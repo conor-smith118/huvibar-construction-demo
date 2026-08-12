@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_billables:
-      title: "Huvibar | Billables & Invoicing"
+      title: "Billables & Invoicing"
       description: "Accounts receivable aging, invoice tracking, time-and-material billing, and change order billings across all Huvibar projects."
       warehouse_id: ${var.warehouse_id}
       serialized_space:

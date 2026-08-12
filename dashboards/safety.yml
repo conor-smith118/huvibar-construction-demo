@@ -1,7 +1,7 @@
 resources:
   dashboards:
     huvibar_dashboard_safety:
-      display_name: "Huvibar | Safety"
+      display_name: "Safety"
       warehouse_id: ${var.warehouse_id}
       file_path: ./safety.lvdash.json
       parent_path: /Shared/Huvibar-Construction-Demo

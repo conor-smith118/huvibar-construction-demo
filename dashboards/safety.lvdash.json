@@ -86,7 +86,6 @@
           },
           "widget": {
             "name": "kpi_trir_c",
-            "title": "TRIR Year-to-Date",
             "queries": [
               {
                 "name": "main_query",
@@ -110,6 +109,10 @@
                   "fieldName": "trir",
                   "displayName": "TRIR Year-to-Date"
                 }
+              },
+              "frame": {
+                "title": "TRIR Year-to-Date",
+                "showTitle": true
               }
             }
           }
@@ -123,7 +126,6 @@
           },
           "widget": {
             "name": "kpi_rec_c",
-            "title": "Recordable Incidents YTD",
             "queries": [
               {
                 "name": "main_query",
@@ -147,6 +149,10 @@
                   "fieldName": "recordable",
                   "displayName": "Recordable Incidents YTD"
                 }
+              },
+              "frame": {
+                "title": "Recordable Incidents YTD",
+                "showTitle": true
               }
             }
           }
@@ -160,7 +166,6 @@
           },
           "widget": {
             "name": "kpi_exp_c",
-            "title": "Expired Certifications",
             "queries": [
               {
                 "name": "main_query",
@@ -184,6 +189,10 @@
                   "fieldName": "expired",
                   "displayName": "Expired Certifications"
                 }
+              },
+              "frame": {
+                "title": "Expired Certifications",
+                "showTitle": true
               }
             }
           }
@@ -197,7 +206,6 @@
           },
           "widget": {
             "name": "kpi_scr_c",
-            "title": "Avg Inspection Score",
             "queries": [
               {
                 "name": "main_query",
@@ -219,8 +227,12 @@
               "encodings": {
                 "value": {
                   "fieldName": "avg_score",
-                  "displayName": "Avg Inspection Score"
+                  "displayName": "Avg Inspection Score (90d)"
                 }
+              },
+              "frame": {
+                "title": "Avg Inspection Score (90d)",
+                "showTitle": true
               }
             }
           }
@@ -234,7 +246,6 @@
           },
           "widget": {
             "name": "bar_inc",
-            "title": "Incidents by Type",
             "queries": [
               {
                 "name": "main_query",
@@ -255,17 +266,27 @@
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "incident_type",
-                  "displayName": "Incident Type"
+                  "displayName": "Incident Type",
+                  "scale": {
+                    "type": "categorical"
+                  }
                 },
                 "y": {
                   "fieldName": "total",
-                  "displayName": "Total"
+                  "displayName": "Total",
+                  "scale": {
+                    "type": "quantitative"
+                  }
                 }
+              },
+              "frame": {
+                "title": "Incidents by Type",
+                "showTitle": true
               }
             }
           }
@@ -279,7 +300,6 @@
           },
           "widget": {
             "name": "pie_sev",
-            "title": "Incident Severity Breakdown",
             "queries": [
               {
                 "name": "main_query",
@@ -287,30 +307,49 @@
                   "datasetName": "severity",
                   "fields": [
                     {
-                      "name": "severity",
-                      "expression": "`severity`"
-                    },
-                    {
                       "name": "cnt",
                       "expression": "`cnt`"
+                    },
+                    {
+                      "name": "severity",
+                      "expression": "`severity`"
                     }
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
                 }
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "pie",
               "encodings": {
-                "label": {
-                  "fieldName": "severity",
-                  "displayName": "Severity"
-                },
-                "value": {
+                "angle": {
                   "fieldName": "cnt",
-                  "displayName": "Cnt"
+                  "displayName": "Cnt",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "hideTitle": true
+                  }
+                },
+                "color": {
+                  "fieldName": "severity",
+                  "displayName": "Severity",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "legend": {
+                    "hideTitle": true
+                  }
+                },
+                "label": {
+                  "show": true
                 }
+              },
+              "frame": {
+                "title": "Incident Severity Breakdown",
+                "showTitle": true
               }
             }
           }
@@ -324,7 +363,6 @@
           },
           "widget": {
             "name": "line_inc",
-            "title": "Monthly Incident Trend \u2014 18 Months",
             "queries": [
               {
                 "name": "main_query",
@@ -340,12 +378,12 @@
                       "expression": "`total`"
                     }
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
                 }
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "line",
               "encodings": {
                 "x": {
@@ -357,8 +395,15 @@
                 },
                 "y": {
                   "fieldName": "total",
-                  "displayName": "Total"
+                  "displayName": "Total",
+                  "scale": {
+                    "type": "quantitative"
+                  }
                 }
+              },
+              "frame": {
+                "title": "Monthly Incidents \u2014 18 Months",
+                "showTitle": true
               }
             }
           }
@@ -372,7 +417,6 @@
           },
           "widget": {
             "name": "bar_insp",
-            "title": "Inspection Scores by Project (90d)",
             "queries": [
               {
                 "name": "main_query",
@@ -393,17 +437,27 @@
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "Project Name"
+                  "displayName": "Project Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
                 },
                 "y": {
                   "fieldName": "avg_score",
-                  "displayName": "Avg Score"
+                  "displayName": "Avg Score",
+                  "scale": {
+                    "type": "quantitative"
+                  }
                 }
+              },
+              "frame": {
+                "title": "Avg Inspection Score by Project (90d)",
+                "showTitle": true
               }
             }
           }
@@ -417,7 +471,6 @@
           },
           "widget": {
             "name": "bar_talks",
-            "title": "Toolbox Talks by Project",
             "queries": [
               {
                 "name": "main_query",
@@ -438,17 +491,27 @@
               }
             ],
             "spec": {
-              "version": 2,
+              "version": 3,
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "Project Name"
+                  "displayName": "Project Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
                 },
                 "y": {
                   "fieldName": "talk_count",
-                  "displayName": "Talk Count"
+                  "displayName": "Talk Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
                 }
+              },
+              "frame": {
+                "title": "Toolbox Talks by Project",
+                "showTitle": true
               }
             }
           }
@@ -462,7 +525,6 @@
           },
           "widget": {
             "name": "tbl_certs",
-            "title": "Certification Status Detail",
             "queries": [
               {
                 "name": "main_query",
@@ -504,6 +566,10 @@
                     "displayName": "Cnt"
                   }
                 ]
+              },
+              "frame": {
+                "title": "Certification Status Detail",
+                "showTitle": true
               }
             }
           }

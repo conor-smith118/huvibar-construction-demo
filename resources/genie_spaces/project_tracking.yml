@@ -1,7 +1,7 @@
 resources:
   genie_spaces:
     huvibar_project_tracking:
-      title: "Huvibar | Project Tracking"
+      title: "Project Tracking"
       description: "Master project status, milestone schedule health, RFI and submittal tracking, daily reports, and closeout punch list management across Huvibar's portfolio."
       warehouse_id: ${var.warehouse_id}
       serialized_space:
