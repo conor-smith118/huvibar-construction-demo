@@ -1,60 +1,62 @@
 {
   "datasets": [
     {
-      "name": "active_projects",
-      "displayName": "Active Projects",
-      "query": "SELECT COUNT(*) AS count FROM css_genie.project_tracking.projects WHERE status = 'active'"
+      "name": "kpi_active",
+      "displayName": "KPI Active Projects",
+      "query": "SELECT COUNT(*) AS active_count FROM css_genie.project_tracking.projects WHERE status = 'active'"
     },
     {
-      "name": "total_value",
-      "displayName": "Total Contract Value",
-      "query": "SELECT ROUND(SUM(contract_value)/1000000,1) AS total_value_m FROM css_genie.project_tracking.projects WHERE status IN ('active','closeout')"
+      "name": "kpi_portfolio_value",
+      "displayName": "KPI Portfolio Value",
+      "query": "SELECT ROUND(SUM(contract_value)/1000000, 1) AS value_m FROM css_genie.project_tracking.projects WHERE status IN ('active','closeout')"
     },
     {
-      "name": "open_rfis",
-      "displayName": "Open RFIs",
-      "query": "SELECT COUNT(*) AS count FROM css_genie.project_tracking.rfis WHERE status = 'open'"
+      "name": "kpi_open_rfis",
+      "displayName": "KPI Open RFIs",
+      "query": "SELECT COUNT(*) AS rfi_count FROM css_genie.project_tracking.rfis WHERE status = 'open'"
     },
     {
-      "name": "overdue_submittals",
-      "displayName": "Overdue Submittals",
-      "query": "SELECT COUNT(*) AS count FROM css_genie.project_tracking.submittals WHERE status IN ('pending','revise_resubmit') AND required_date < current_date()"
+      "name": "kpi_pending_submittals",
+      "displayName": "KPI Pending Submittals",
+      "query": "SELECT COUNT(*) AS submittal_count FROM css_genie.project_tracking.submittals WHERE status IN ('pending','revise_resubmit')"
     },
     {
-      "name": "projects_by_type",
-      "displayName": "Projects by Type",
-      "query": "SELECT project_type, COUNT(*) AS project_count FROM css_genie.project_tracking.projects GROUP BY project_type ORDER BY project_count DESC"
+      "name": "contract_by_type",
+      "displayName": "Contract by Project Type",
+      "query": "SELECT project_type, ROUND(SUM(contract_value)/1000000,1) AS value_m, COUNT(*) AS project_count FROM css_genie.project_tracking.projects GROUP BY project_type ORDER BY value_m DESC"
     },
     {
-      "name": "project_list",
-      "displayName": "Project List",
-      "query": "SELECT project_name, project_type, ROUND(contract_value/1000000,2) AS value_m, status, project_manager, superintendent, percent_complete FROM css_genie.project_tracking.projects ORDER BY contract_value DESC"
+      "name": "portfolio_completion",
+      "displayName": "Portfolio Completion",
+      "query": "SELECT project_name, ROUND(contract_value/1000000,1) AS value_m, ROUND(percent_complete,0) AS pct_complete, status FROM css_genie.project_tracking.projects WHERE status IN ('active','closeout') ORDER BY contract_value DESC"
     },
     {
-      "name": "rfis_by_project",
-      "displayName": "Open RFIs by Project",
-      "query": "SELECT p.project_name, COUNT(r.rfi_id) AS open_rfis FROM css_genie.project_tracking.rfis r JOIN css_genie.project_tracking.projects p ON r.project_id = p.project_id WHERE r.status = 'open' GROUP BY p.project_name ORDER BY open_rfis DESC"
+      "name": "rfi_by_project",
+      "displayName": "RFIs by Project",
+      "query": "SELECT p.project_name, COUNT(r.rfi_id) AS open_rfis, AVG(r.days_open) AS avg_days_open FROM css_genie.project_tracking.rfis r JOIN css_genie.project_tracking.projects p ON r.project_id = p.project_id WHERE r.status = 'open' GROUP BY p.project_name ORDER BY open_rfis DESC LIMIT 10"
+    },
+    {
+      "name": "projects_by_status",
+      "displayName": "Projects by Status",
+      "query": "SELECT status, COUNT(*) AS cnt, ROUND(SUM(contract_value)/1000000,1) AS value_m FROM css_genie.project_tracking.projects GROUP BY status ORDER BY cnt DESC"
     }
   ],
   "pages": [
     {
-      "name": "project_overview",
-      "displayName": "Project Overview",
+      "name": "project_overview_page",
+      "displayName": "Huvibar | Project Overview",
       "layout": [
         {
           "widget": {
-            "name": "w_active",
+            "name": "counter_active",
             "title": "Active Projects",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "active_projects",
+                  "datasetName": "kpi_active",
                   "fields": [
-                    {
-                      "name": "count",
-                      "expression": "`count`"
-                    }
+                    {"name": "active_count", "expression": "`active_count`"}
                   ],
                   "disaggregated": false
                 }
@@ -64,34 +66,23 @@
               "version": 2,
               "widgetType": "counter",
               "encodings": {
-                "value": {
-                  "fieldName": "count",
-                  "displayName": "Active Projects"
-                }
+                "value": {"fieldName": "active_count", "displayName": "Active Projects"}
               }
             }
           },
-          "position": {
-            "x": 0,
-            "y": 0,
-            "width": 2,
-            "height": 3
-          }
+          "position": {"x": 0, "y": 0, "width": 2, "height": 3}
         },
         {
           "widget": {
-            "name": "w_value",
-            "title": "Contract Value ($M)",
+            "name": "counter_value",
+            "title": "Portfolio Value",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "total_value",
+                  "datasetName": "kpi_portfolio_value",
                   "fields": [
-                    {
-                      "name": "total_value_m",
-                      "expression": "`total_value_m`"
-                    }
+                    {"name": "value_m", "expression": "`value_m`"}
                   ],
                   "disaggregated": false
                 }
@@ -102,33 +93,26 @@
               "widgetType": "counter",
               "encodings": {
                 "value": {
-                  "fieldName": "total_value_m",
-                  "displayName": "Contract Value ($M)"
+                  "fieldName": "value_m",
+                  "displayName": "$M",
+                  "numberFormat": {"type": "number"}
                 }
               }
             }
           },
-          "position": {
-            "x": 2,
-            "y": 0,
-            "width": 2,
-            "height": 3
-          }
+          "position": {"x": 2, "y": 0, "width": 2, "height": 3}
         },
         {
           "widget": {
-            "name": "w_rfis",
+            "name": "counter_rfis",
             "title": "Open RFIs",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "open_rfis",
+                  "datasetName": "kpi_open_rfis",
                   "fields": [
-                    {
-                      "name": "count",
-                      "expression": "`count`"
-                    }
+                    {"name": "rfi_count", "expression": "`rfi_count`"}
                   ],
                   "disaggregated": false
                 }
@@ -138,34 +122,23 @@
               "version": 2,
               "widgetType": "counter",
               "encodings": {
-                "value": {
-                  "fieldName": "count",
-                  "displayName": "Open RFIs"
-                }
+                "value": {"fieldName": "rfi_count", "displayName": "Open RFIs"}
               }
             }
           },
-          "position": {
-            "x": 4,
-            "y": 0,
-            "width": 1,
-            "height": 3
-          }
+          "position": {"x": 4, "y": 0, "width": 1, "height": 3}
         },
         {
           "widget": {
-            "name": "w_submittals",
-            "title": "Overdue Submittals",
+            "name": "counter_submittals",
+            "title": "Pending Submittals",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "overdue_submittals",
+                  "datasetName": "kpi_pending_submittals",
                   "fields": [
-                    {
-                      "name": "count",
-                      "expression": "`count`"
-                    }
+                    {"name": "submittal_count", "expression": "`submittal_count`"}
                   ],
                   "disaggregated": false
                 }
@@ -175,40 +148,26 @@
               "version": 2,
               "widgetType": "counter",
               "encodings": {
-                "value": {
-                  "fieldName": "count",
-                  "displayName": "Overdue Submittals"
-                }
+                "value": {"fieldName": "submittal_count", "displayName": "Pending Submittals"}
               }
             }
           },
-          "position": {
-            "x": 5,
-            "y": 0,
-            "width": 1,
-            "height": 3
-          }
+          "position": {"x": 5, "y": 0, "width": 1, "height": 3}
         },
         {
           "widget": {
-            "name": "w_by_type",
-            "title": "Projects by Type",
+            "name": "bar_by_type",
+            "title": "Contract Value by Project Type ($M)",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "projects_by_type",
+                  "datasetName": "contract_by_type",
                   "fields": [
-                    {
-                      "name": "project_type",
-                      "expression": "`project_type`"
-                    },
-                    {
-                      "name": "project_count",
-                      "expression": "`project_count`"
-                    }
+                    {"name": "project_type", "expression": "`project_type`"},
+                    {"name": "value_m", "expression": "`value_m`"}
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
                 }
               }
             ],
@@ -216,44 +175,55 @@
               "version": 2,
               "widgetType": "bar",
               "encodings": {
-                "x": {
-                  "fieldName": "project_type",
-                  "displayName": "project_type"
-                },
-                "y": {
-                  "fieldName": "project_count",
-                  "displayName": "project_count"
-                }
+                "x": {"fieldName": "project_type", "displayName": "Project Type"},
+                "y": {"fieldName": "value_m", "displayName": "Value ($M)"}
               }
             }
           },
-          "position": {
-            "x": 0,
-            "y": 3,
-            "width": 3,
-            "height": 5
-          }
+          "position": {"x": 0, "y": 3, "width": 3, "height": 5}
         },
         {
           "widget": {
-            "name": "w_rfis_proj",
-            "title": "Open RFIs by Project",
+            "name": "pie_status",
+            "title": "Projects by Status",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "rfis_by_project",
+                  "datasetName": "projects_by_status",
                   "fields": [
-                    {
-                      "name": "project_name",
-                      "expression": "`project_name`"
-                    },
-                    {
-                      "name": "open_rfis",
-                      "expression": "`open_rfis`"
-                    }
+                    {"name": "status", "expression": "`status`"},
+                    {"name": "cnt", "expression": "`cnt`"}
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "pie",
+              "encodings": {
+                "label": {"fieldName": "status", "displayName": "Status"},
+                "value": {"fieldName": "cnt", "displayName": "Count"}
+              }
+            }
+          },
+          "position": {"x": 3, "y": 3, "width": 3, "height": 5}
+        },
+        {
+          "widget": {
+            "name": "bar_rfis",
+            "title": "Open RFIs by Project (Top 10)",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "rfi_by_project",
+                  "fields": [
+                    {"name": "project_name", "expression": "`project_name`"},
+                    {"name": "open_rfis", "expression": "`open_rfis`"}
+                  ],
+                  "disaggregated": false
                 }
               }
             ],
@@ -261,60 +231,29 @@
               "version": 2,
               "widgetType": "bar",
               "encodings": {
-                "x": {
-                  "fieldName": "project_name",
-                  "displayName": "project_name"
-                },
-                "y": {
-                  "fieldName": "open_rfis",
-                  "displayName": "open_rfis"
-                }
+                "x": {"fieldName": "project_name", "displayName": "Project"},
+                "y": {"fieldName": "open_rfis", "displayName": "Open RFIs"}
               }
             }
           },
-          "position": {
-            "x": 3,
-            "y": 3,
-            "width": 3,
-            "height": 5
-          }
+          "position": {"x": 0, "y": 8, "width": 6, "height": 6}
         },
         {
           "widget": {
-            "name": "w_proj_list",
-            "title": "All Projects",
+            "name": "table_portfolio",
+            "title": "Project Portfolio",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "project_list",
+                  "datasetName": "portfolio_completion",
                   "fields": [
-                    {
-                      "name": "project_name",
-                      "expression": "`project_name`"
-                    },
-                    {
-                      "name": "project_type",
-                      "expression": "`project_type`"
-                    },
-                    {
-                      "name": "value_m",
-                      "expression": "`value_m`"
-                    },
-                    {
-                      "name": "status",
-                      "expression": "`status`"
-                    },
-                    {
-                      "name": "project_manager",
-                      "expression": "`project_manager`"
-                    },
-                    {
-                      "name": "percent_complete",
-                      "expression": "`percent_complete`"
-                    }
+                    {"name": "project_name", "expression": "`project_name`"},
+                    {"name": "value_m", "expression": "`value_m`"},
+                    {"name": "pct_complete", "expression": "`pct_complete`"},
+                    {"name": "status", "expression": "`status`"}
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
                 }
               }
             ],
@@ -323,40 +262,15 @@
               "widgetType": "table",
               "encodings": {
                 "columns": [
-                  {
-                    "fieldName": "project_name",
-                    "displayName": "project_name"
-                  },
-                  {
-                    "fieldName": "project_type",
-                    "displayName": "project_type"
-                  },
-                  {
-                    "fieldName": "value_m",
-                    "displayName": "value_m"
-                  },
-                  {
-                    "fieldName": "status",
-                    "displayName": "status"
-                  },
-                  {
-                    "fieldName": "project_manager",
-                    "displayName": "project_manager"
-                  },
-                  {
-                    "fieldName": "percent_complete",
-                    "displayName": "percent_complete"
-                  }
+                  {"fieldName": "project_name", "displayName": "Project"},
+                  {"fieldName": "value_m", "displayName": "Value ($M)"},
+                  {"fieldName": "pct_complete", "displayName": "% Complete"},
+                  {"fieldName": "status", "displayName": "Status"}
                 ]
               }
             }
           },
-          "position": {
-            "x": 0,
-            "y": 8,
-            "width": 6,
-            "height": 8
-          }
+          "position": {"x": 0, "y": 14, "width": 6, "height": 8}
         }
       ]
     }

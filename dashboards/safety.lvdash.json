@@ -1,55 +1,88 @@
 {
   "datasets": [
     {
-      "name": "recordable_ytd",
-      "displayName": "Recordable YTD",
-      "query": "SELECT COUNT(*) AS count FROM css_genie.safety_compliance.incidents WHERE osha_recordable = true AND year(incident_date) = year(current_date())"
+      "name": "kpi_trir",
+      "displayName": "KPI TRIR",
+      "query": "SELECT ROUND(COUNT(CASE WHEN osha_recordable=true THEN 1 END)*200000.0/NULLIF(SUM(ml.total_hours),0),2) AS trir FROM css_genie.safety_compliance.incidents i CROSS JOIN (SELECT SUM(total_hours) AS total_hours FROM css_genie.scheduling.daily_manpower_log WHERE year(log_date)=year(current_date())) ml WHERE year(i.incident_date)=year(current_date())"
     },
     {
-      "name": "expired_certs",
-      "displayName": "Expired Certs",
-      "query": "SELECT COUNT(*) AS count FROM css_genie.safety_compliance.certifications WHERE status = 'expired'"
+      "name": "kpi_recordable",
+      "displayName": "KPI Recordable Incidents",
+      "query": "SELECT COUNT(*) AS recordable_count FROM css_genie.safety_compliance.incidents WHERE osha_recordable=true AND year(incident_date)=year(current_date())"
     },
     {
-      "name": "expiring_certs",
-      "displayName": "Expiring Soon",
-      "query": "SELECT COUNT(*) AS count FROM css_genie.safety_compliance.certifications WHERE status = 'expiring_soon'"
+      "name": "kpi_expired_certs",
+      "displayName": "KPI Expired Certifications",
+      "query": "SELECT COUNT(*) AS expired_count FROM css_genie.safety_compliance.certifications WHERE status='expired'"
+    },
+    {
+      "name": "kpi_expiring_certs",
+      "displayName": "KPI Expiring Certifications",
+      "query": "SELECT COUNT(*) AS expiring_count FROM css_genie.safety_compliance.certifications WHERE status='expiring_soon'"
     },
     {
       "name": "incidents_by_type",
       "displayName": "Incidents by Type",
-      "query": "SELECT incident_type, COUNT(*) AS total FROM css_genie.safety_compliance.incidents GROUP BY incident_type ORDER BY total DESC"
+      "query": "SELECT incident_type, COUNT(*) AS total, SUM(CASE WHEN osha_recordable=true THEN 1 ELSE 0 END) AS recordable FROM css_genie.safety_compliance.incidents GROUP BY incident_type ORDER BY total DESC"
     },
     {
       "name": "inspection_scores",
-      "displayName": "Inspection Scores",
-      "query": "SELECT p.project_name, ROUND(AVG(si.overall_score),1) AS avg_score FROM css_genie.safety_compliance.safety_inspections si JOIN css_genie.project_tracking.projects p ON si.project_id = p.project_id WHERE si.inspection_date >= date_sub(current_date(), 90) GROUP BY p.project_name ORDER BY avg_score DESC"
+      "displayName": "Safety Inspection Scores",
+      "query": "SELECT p.project_name, ROUND(AVG(si.overall_score),1) AS avg_score, COUNT(*) AS inspection_count FROM css_genie.safety_compliance.safety_inspections si JOIN css_genie.project_tracking.projects p ON si.project_id=p.project_id WHERE si.inspection_date >= date_sub(current_date(),90) GROUP BY p.project_name ORDER BY avg_score DESC"
     },
     {
-      "name": "cert_status",
-      "displayName": "Cert Status",
-      "query": "SELECT cert_type, status, COUNT(*) AS count FROM css_genie.safety_compliance.certifications GROUP BY cert_type, status ORDER BY cert_type"
+      "name": "cert_by_type",
+      "displayName": "Certifications by Type and Status",
+      "query": "SELECT cert_type, status, COUNT(*) AS cert_count FROM css_genie.safety_compliance.certifications GROUP BY cert_type, status ORDER BY cert_type, status"
+    },
+    {
+      "name": "monthly_incidents",
+      "displayName": "Monthly Incident Trend",
+      "query": "SELECT date_format(date_trunc('month', incident_date),'yyyy-MM') AS month, COUNT(*) AS total, SUM(CASE WHEN osha_recordable=true THEN 1 ELSE 0 END) AS recordable FROM css_genie.safety_compliance.incidents WHERE incident_date >= add_months(current_date(),-12) GROUP BY month ORDER BY month"
     }
   ],
   "pages": [
     {
-      "name": "safety",
-      "displayName": "Safety & Compliance",
+      "name": "safety_page",
+      "displayName": "Huvibar | Safety & Compliance",
       "layout": [
         {
           "widget": {
-            "name": "w_recordable",
+            "name": "counter_trir",
+            "title": "TRIR (YTD)",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "kpi_trir",
+                  "fields": [
+                    {"name": "trir", "expression": "`trir`"}
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {"fieldName": "trir", "displayName": "TRIR"}
+              }
+            }
+          },
+          "position": {"x": 0, "y": 0, "width": 2, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "counter_recordable",
             "title": "Recordable Incidents YTD",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "recordable_ytd",
+                  "datasetName": "kpi_recordable",
                   "fields": [
-                    {
-                      "name": "count",
-                      "expression": "`count`"
-                    }
+                    {"name": "recordable_count", "expression": "`recordable_count`"}
                   ],
                   "disaggregated": false
                 }
@@ -59,34 +92,23 @@
               "version": 2,
               "widgetType": "counter",
               "encodings": {
-                "value": {
-                  "fieldName": "count",
-                  "displayName": "Recordable Incidents YTD"
-                }
+                "value": {"fieldName": "recordable_count", "displayName": "Recordable Incidents"}
               }
             }
           },
-          "position": {
-            "x": 0,
-            "y": 0,
-            "width": 2,
-            "height": 3
-          }
+          "position": {"x": 2, "y": 0, "width": 2, "height": 3}
         },
         {
           "widget": {
-            "name": "w_expired",
+            "name": "counter_expired",
             "title": "Expired Certifications",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "expired_certs",
+                  "datasetName": "kpi_expired_certs",
                   "fields": [
-                    {
-                      "name": "count",
-                      "expression": "`count`"
-                    }
+                    {"name": "expired_count", "expression": "`expired_count`"}
                   ],
                   "disaggregated": false
                 }
@@ -96,34 +118,23 @@
               "version": 2,
               "widgetType": "counter",
               "encodings": {
-                "value": {
-                  "fieldName": "count",
-                  "displayName": "Expired Certifications"
-                }
+                "value": {"fieldName": "expired_count", "displayName": "Expired"}
               }
             }
           },
-          "position": {
-            "x": 2,
-            "y": 0,
-            "width": 2,
-            "height": 3
-          }
+          "position": {"x": 4, "y": 0, "width": 1, "height": 3}
         },
         {
           "widget": {
-            "name": "w_expiring",
-            "title": "Expiring Soon (90d)",
+            "name": "counter_expiring",
+            "title": "Expiring Soon",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "expiring_certs",
+                  "datasetName": "kpi_expiring_certs",
                   "fields": [
-                    {
-                      "name": "count",
-                      "expression": "`count`"
-                    }
+                    {"name": "expiring_count", "expression": "`expiring_count`"}
                   ],
                   "disaggregated": false
                 }
@@ -133,23 +144,15 @@
               "version": 2,
               "widgetType": "counter",
               "encodings": {
-                "value": {
-                  "fieldName": "count",
-                  "displayName": "Expiring Soon (90d)"
-                }
+                "value": {"fieldName": "expiring_count", "displayName": "Expiring Soon"}
               }
             }
           },
-          "position": {
-            "x": 4,
-            "y": 0,
-            "width": 2,
-            "height": 3
-          }
+          "position": {"x": 5, "y": 0, "width": 1, "height": 3}
         },
         {
           "widget": {
-            "name": "w_incidents",
+            "name": "bar_incidents",
             "title": "Incidents by Type",
             "queries": [
               {
@@ -157,16 +160,10 @@
                 "query": {
                   "datasetName": "incidents_by_type",
                   "fields": [
-                    {
-                      "name": "incident_type",
-                      "expression": "`incident_type`"
-                    },
-                    {
-                      "name": "total",
-                      "expression": "`total`"
-                    }
+                    {"name": "incident_type", "expression": "`incident_type`"},
+                    {"name": "total", "expression": "`total`"}
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
                 }
               }
             ],
@@ -174,44 +171,27 @@
               "version": 2,
               "widgetType": "bar",
               "encodings": {
-                "x": {
-                  "fieldName": "incident_type",
-                  "displayName": "incident_type"
-                },
-                "y": {
-                  "fieldName": "total",
-                  "displayName": "total"
-                }
+                "x": {"fieldName": "incident_type", "displayName": "Incident Type"},
+                "y": {"fieldName": "total", "displayName": "Total Incidents"}
               }
             }
           },
-          "position": {
-            "x": 0,
-            "y": 3,
-            "width": 3,
-            "height": 5
-          }
+          "position": {"x": 0, "y": 3, "width": 3, "height": 5}
         },
         {
           "widget": {
-            "name": "w_inspections",
-            "title": "Avg Inspection Score (90d)",
+            "name": "bar_inspection",
+            "title": "Avg Safety Inspection Score by Project (90 days)",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
                   "datasetName": "inspection_scores",
                   "fields": [
-                    {
-                      "name": "project_name",
-                      "expression": "`project_name`"
-                    },
-                    {
-                      "name": "avg_score",
-                      "expression": "`avg_score`"
-                    }
+                    {"name": "project_name", "expression": "`project_name`"},
+                    {"name": "avg_score", "expression": "`avg_score`"}
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
                 }
               }
             ],
@@ -219,48 +199,56 @@
               "version": 2,
               "widgetType": "bar",
               "encodings": {
-                "x": {
-                  "fieldName": "project_name",
-                  "displayName": "project_name"
-                },
-                "y": {
-                  "fieldName": "avg_score",
-                  "displayName": "avg_score"
-                }
+                "x": {"fieldName": "project_name", "displayName": "Project"},
+                "y": {"fieldName": "avg_score", "displayName": "Avg Score"}
               }
             }
           },
-          "position": {
-            "x": 3,
-            "y": 3,
-            "width": 3,
-            "height": 5
-          }
+          "position": {"x": 3, "y": 3, "width": 3, "height": 5}
         },
         {
           "widget": {
-            "name": "w_cert",
-            "title": "Certification Status Summary",
+            "name": "line_incidents",
+            "title": "Monthly Incident Trend (12 months)",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "cert_status",
+                  "datasetName": "monthly_incidents",
                   "fields": [
-                    {
-                      "name": "cert_type",
-                      "expression": "`cert_type`"
-                    },
-                    {
-                      "name": "status",
-                      "expression": "`status`"
-                    },
-                    {
-                      "name": "count",
-                      "expression": "`count`"
-                    }
+                    {"name": "month", "expression": "`month`"},
+                    {"name": "total", "expression": "`total`"}
                   ],
-                  "disaggregated": true
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "line",
+              "encodings": {
+                "x": {"fieldName": "month", "displayName": "Month", "scale": {"type": "temporal"}},
+                "y": {"fieldName": "total", "displayName": "Incidents"}
+              }
+            }
+          },
+          "position": {"x": 0, "y": 8, "width": 6, "height": 5}
+        },
+        {
+          "widget": {
+            "name": "table_certs",
+            "title": "Certification Status by Type",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "cert_by_type",
+                  "fields": [
+                    {"name": "cert_type", "expression": "`cert_type`"},
+                    {"name": "status", "expression": "`status`"},
+                    {"name": "cert_count", "expression": "`cert_count`"}
+                  ],
+                  "disaggregated": false
                 }
               }
             ],
@@ -269,28 +257,14 @@
               "widgetType": "table",
               "encodings": {
                 "columns": [
-                  {
-                    "fieldName": "cert_type",
-                    "displayName": "cert_type"
-                  },
-                  {
-                    "fieldName": "status",
-                    "displayName": "status"
-                  },
-                  {
-                    "fieldName": "count",
-                    "displayName": "count"
-                  }
+                  {"fieldName": "cert_type", "displayName": "Certification"},
+                  {"fieldName": "status", "displayName": "Status"},
+                  {"fieldName": "cert_count", "displayName": "Count"}
                 ]
               }
             }
           },
-          "position": {
-            "x": 0,
-            "y": 8,
-            "width": 6,
-            "height": 7
-          }
+          "position": {"x": 0, "y": 13, "width": 6, "height": 8}
         }
       ]
     }
