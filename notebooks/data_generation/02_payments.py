@@ -6,8 +6,7 @@
 # COMMAND ----------
 
 # COMMAND ----------
-dbutils.widgets.text("catalog", "css_genie")
-catalog = dbutils.widgets.get("catalog")
+catalog = "css_genie"  # hardcoded for serverless compatibility
 print(f"Using catalog: {catalog}")
 
 # COMMAND ----------

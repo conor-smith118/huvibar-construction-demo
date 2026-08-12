@@ -1,7 +1,7 @@
 # Databricks notebook source
 
 # COMMAND ----------
-catalog = dbutils.widgets.get("catalog") if "catalog" in [w.name for w in dbutils.widgets.getAll()] else "css_genie"
+catalog = "css_genie"  # hardcoded for serverless compatibility if "catalog" in [w.name for w in dbutils.widgets.getAll()] else "css_genie"
 
 # COMMAND ----------
 # =============================================================================

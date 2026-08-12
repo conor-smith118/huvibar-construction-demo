@@ -14,7 +14,7 @@ random.seed(42)
 fake = Faker()
 Faker.seed(42)
 
-catalog = spark.conf.get("catalog", "css_genie")
+catalog = "css_genie"  # hardcoded for serverless compatibility
 
 PROJECTS = [
     {"project_id": "P001", "project_name": "Centennial Tower Office Complex", "contract_value": 85000000, "start_date": "2020-03-01", "end_date": "2022-08-15", "status": "completed", "city": "Denver", "state": "CO"},

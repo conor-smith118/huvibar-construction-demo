@@ -15,7 +15,7 @@ fake = Faker()
 Faker.seed(42)
 random.seed(42)
 
-catalog = spark.conf.get("catalog", "css_genie")
+catalog = "css_genie"  # hardcoded for serverless compatibility
 
 # COMMAND ----------
 
