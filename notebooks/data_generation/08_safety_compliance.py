@@ -714,12 +714,15 @@ for emp_num in range(1, 201):
         all_cert_data[emp_id].append("Powder_Actuated_Tool")
 
     # Pad to ~10 certs per employee using additional safety certs
+    # Use set difference to avoid infinite loop when pool is exhausted
     extra_cert_pool = ["OSHA_10_hour", "First_Aid_CPR", "Silica_Awareness",
                        "Lead_Awareness", "Forklift_Operator", "Powder_Actuated_Tool"]
-    while len(all_cert_data[emp_id]) < 9:
-        extra = random.choice(extra_cert_pool)
-        if extra not in all_cert_data[emp_id]:
-            all_cert_data[emp_id].append(extra)
+    available = [c for c in extra_cert_pool if c not in all_cert_data[emp_id]]
+    random.shuffle(available)
+    for extra in available:
+        if len(all_cert_data[emp_id]) >= 9:
+            break
+        all_cert_data[emp_id].append(extra)
 
 for emp_num in range(1, 201):
     emp_id = f"EMP-{emp_num:03d}"
