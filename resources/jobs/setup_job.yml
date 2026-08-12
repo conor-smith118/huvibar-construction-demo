@@ -4,100 +4,79 @@ resources:
       name: "Huvibar Construction - Demo Setup Job"
       description: "Runs all data generation and semantics notebooks to initialize the Huvibar Construction demo environment"
 
-      job_clusters:
-        - job_cluster_key: setup_cluster
-          new_cluster:
-            spark_version: "15.4.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 4
-            spark_conf:
-              spark.databricks.delta.preview.enabled: "true"
-            azure_attributes:
-              first_on_demand: 4
-              availability: ON_DEMAND_AZURE
-
       tasks:
         # Task 0: Create shared dimensions (must run first)
         - task_key: shared_dimensions
-          job_cluster_key: setup_cluster
           notebook_task:
             notebook_path: ../../notebooks/data_generation/00_shared_dimensions.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 1800
+          environment_key: serverless
 
         # Tasks 1-8: Domain data (run in parallel after task 0)
         - task_key: scheduling_data
           depends_on: [{task_key: shared_dimensions}]
-          job_cluster_key: setup_cluster
           notebook_task:
             notebook_path: ../../notebooks/data_generation/01_scheduling.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 1800
+          environment_key: serverless
 
         - task_key: payments_data
           depends_on: [{task_key: shared_dimensions}]
-          job_cluster_key: setup_cluster
           notebook_task:
             notebook_path: ../../notebooks/data_generation/02_payments.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 3600
+          environment_key: serverless
 
         - task_key: billables_data
           depends_on: [{task_key: shared_dimensions}]
-          job_cluster_key: setup_cluster
           notebook_task:
             notebook_path: ../../notebooks/data_generation/03_billables.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 3600
+          environment_key: serverless
 
         - task_key: cost_reporting_data
           depends_on: [{task_key: shared_dimensions}]
-          job_cluster_key: setup_cluster
           notebook_task:
             notebook_path: ../../notebooks/data_generation/04_cost_reporting.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 1800
+          environment_key: serverless
 
         - task_key: project_tracking_data
           depends_on: [{task_key: shared_dimensions}]
-          job_cluster_key: setup_cluster
           notebook_task:
             notebook_path: ../../notebooks/data_generation/05_project_tracking.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 3600
+          environment_key: serverless
 
         - task_key: contracts_data
           depends_on: [{task_key: shared_dimensions}]
-          job_cluster_key: setup_cluster
           notebook_task:
             notebook_path: ../../notebooks/data_generation/06_contracts.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 3600
+          environment_key: serverless
 
         - task_key: concrete_testing_data
           depends_on: [{task_key: shared_dimensions}]
-          job_cluster_key: setup_cluster
           notebook_task:
             notebook_path: ../../notebooks/data_generation/07_concrete_testing.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 3600
+          environment_key: serverless
 
         - task_key: safety_data
           depends_on: [{task_key: shared_dimensions}]
-          job_cluster_key: setup_cluster
           notebook_task:
             notebook_path: ../../notebooks/data_generation/08_safety_compliance.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 3600
+          environment_key: serverless
 
         # Semantics: run after all data generation
         - task_key: table_comments
@@ -110,21 +89,24 @@ resources:
             - {task_key: contracts_data}
             - {task_key: concrete_testing_data}
             - {task_key: safety_data}
-          job_cluster_key: setup_cluster
           notebook_task:
             notebook_path: ../../notebooks/semantics/01_table_comments.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 1200
+          environment_key: serverless
 
         - task_key: column_comments
           depends_on: [{task_key: table_comments}]
-          job_cluster_key: setup_cluster
           notebook_task:
             notebook_path: ../../notebooks/semantics/02_column_comments.py
             base_parameters:
               catalog: "{{var:catalog}}"
-          timeout_seconds: 1200
+          environment_key: serverless
+
+      environments:
+        - environment_key: serverless
+          spec:
+            client: "1"
 
       email_notifications:
         on_success:
