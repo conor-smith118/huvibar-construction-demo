@@ -2,92 +2,127 @@ resources:
   genie_spaces:
     huvibar_scheduling:
       display_name: "Huvibar | Scheduling & Workforce"
-      warehouse_id: ${var.warehouse_id}
       description: "Daily crew assignments, equipment logs, subcontractor schedules, and manpower utilization across Huvibar's 25 active projects."
-      instructions: |
-        You are a scheduling and workforce analytics assistant for Huvibar Construction, a general contractor managing 25 active projects with approximately 200 direct employees and 60+ subcontractors.
-
-        **Data available:**
-        - crew_schedules: Individual crew member daily assignments, including project_id, employee_id, trade, work_date, hours_worked, overtime_hours, foreman_id, and cost_code.
-        - equipment_schedules: Daily equipment assignments with equipment_id, equipment_type, equipment_name, project_id, operator_employee_id, work_date, hours_operated, fuel_consumed_gallons, and rental_rate_per_day.
-        - subcontractor_schedules: Subcontractor on-site windows with sub_id, project_id, phase, planned_start_date, planned_end_date, actual_start_date, actual_end_date, crew_size, and status.
-        - daily_manpower_log: Aggregated daily headcount summary per project with log_id, log_date, project_id, huvibar_headcount, sub_headcount, total_headcount, huvibar_hours, sub_hours, total_hours, and weather_condition.
-        - projects: Master project list with project_id, project_name, status, contract_value, project_type, and related fields.
-        - employees: Employee master with employee_id, first_name, last_name, role, department, trade, hire_date, and employment_type.
-        - subcontractors: Subcontractor master with sub_id, company_name, trade, tier, insurance_expiry, and status.
-
-        **Key date fields:**
-        - Use work_date in crew_schedules and equipment_schedules.
-        - Use log_date in daily_manpower_log.
-
-        **Trade types tracked:** carpenter, ironworker, electrician, plumber, laborer, foreman, and general superintendent.
-
-        **Key metrics to help users calculate:**
-        - Utilization %: hours_worked / (scheduled_hours) * 100
-        - Overtime rate: overtime_hours / hours_worked * 100
-        - Equipment uptime: hours_operated / (hours_operated + idle_hours) * 100
-        - Peak headcount: MAX(total_headcount) per project per period
-
-        **Answering guidance:**
-        - When asked about "this week" or "this month," use date_trunc() functions relative to current_date().
-        - For headcount trends, group by log_date and aggregate from daily_manpower_log.
-        - For individual trade breakdowns, join crew_schedules to employees on employee_id.
-        - Subcontractor crew counts come from subcontractor_schedules.crew_size; headcount in daily_manpower_log may include both self-perform and sub labor depending on project setup.
-        - Always JOIN to projects when users ask about a named project rather than a project_id.
-      tables:
-        - name: "${var.catalog}.scheduling.crew_schedules"
-        - name: "${var.catalog}.scheduling.equipment_schedules"
-        - name: "${var.catalog}.scheduling.subcontractor_schedules"
-        - name: "${var.catalog}.scheduling.daily_manpower_log"
-        - name: "${var.catalog}.project_tracking.projects"
-        - name: "${var.catalog}.project_tracking.employees"
-        - name: "${var.catalog}.project_tracking.subcontractors"
-      verified_queries:
-        - name: "Total labor hours by project this month"
-          description: "Summarizes total direct-labor hours logged per project for the current calendar month, sourced from the aggregated daily manpower log."
-          query: |
-            SELECT
-              p.project_name,
-              dml.project_id,
-              SUM(dml.total_hours)    AS total_hours,
-              SUM(dml.overtime_hours) AS overtime_hours,
-              COUNT(DISTINCT dml.log_date) AS days_worked
-            FROM ${var.catalog}.scheduling.daily_manpower_log dml
-            JOIN ${var.catalog}.project_tracking.projects p
-              ON dml.project_id = p.project_id
-            WHERE dml.log_date >= date_trunc('month', current_date())
-            GROUP BY p.project_name, dml.project_id
-            ORDER BY total_hours DESC
-
-        - name: "Equipment utilization by type"
-          description: "Average daily hours operated and unique equipment count grouped by equipment type, across all projects and dates."
-          query: |
-            SELECT
-              equipment_type,
-              COUNT(DISTINCT equipment_id)          AS equipment_count,
-              ROUND(AVG(hours_operated), 2)          AS avg_hours_operated,
-              ROUND(MAX(hours_operated), 2)          AS max_hours_per_day,
-              ROUND(SUM(hours_operated), 0)          AS total_hours
-            FROM ${var.catalog}.scheduling.equipment_schedules
-            GROUP BY equipment_type
-            ORDER BY total_hours DESC
-
-        - name: "Subcontractors currently active on site"
-          description: "Lists all subcontractors with an active status, showing company name, trade, project, and crew size."
-          query: |
-            SELECT
-              s.company_name,
-              s.trade,
-              ss.project_id,
-              p.project_name,
-              ss.crew_size,
-              ss.planned_start_date,
-              ss.planned_end_date,
-              ss.status
-            FROM ${var.catalog}.scheduling.subcontractor_schedules ss
-            JOIN ${var.catalog}.project_tracking.subcontractors s
-              ON ss.sub_id = s.sub_id
-            JOIN ${var.catalog}.project_tracking.projects p
-              ON ss.project_id = p.project_id
-            WHERE ss.status = 'active'
-            ORDER BY ss.crew_size DESC
+      warehouse_id: ${var.warehouse_id}
+      serialized_space:
+        version: 2
+        config:
+          sample_questions:
+            - id: "36afb4204e5444b6b86683b6534d7c85"
+              question:
+                - "How many total labor hours were logged last month?"
+            - id: "def1c90be25348ce95440bef0e87ee42"
+              question:
+                - "Which projects have the most equipment on site this week?"
+            - id: "3932ce98b23241a08c4ad34367d5f8bf"
+              question:
+                - "Show me overtime hours by trade this month"
+        data_sources:
+          tables:
+            - identifier: "css_genie.scheduling.crew_schedules"
+              description:
+                - "Individual crew member daily assignments. Key fields: project_id, employee_id, trade, work_date, hours_worked, overtime_hours, foreman_id, cost_code."
+              column_configs:
+                - column_name: "trade"
+                - column_name: "work_date"
+                - column_name: "hours_worked"
+                - column_name: "overtime_hours"
+            - identifier: "css_genie.scheduling.equipment_schedules"
+              description:
+                - "Daily equipment assignments per project. Key fields: equipment_id, equipment_type, equipment_name, project_id, operator_employee_id, work_date, hours_operated, fuel_consumed_gallons, rental_rate_per_day."
+              column_configs:
+                - column_name: "equipment_type"
+                - column_name: "hours_operated"
+                - column_name: "work_date"
+            - identifier: "css_genie.scheduling.subcontractor_schedules"
+              description:
+                - "Subcontractor on-site windows. Key fields: sub_id, project_id, phase, planned_start_date, planned_end_date, actual_start_date, actual_end_date, crew_size, status."
+              column_configs:
+                - column_name: "status"
+                - column_name: "crew_size"
+                - column_name: "planned_start_date"
+                - column_name: "planned_end_date"
+            - identifier: "css_genie.scheduling.daily_manpower_log"
+              description:
+                - "Aggregated daily headcount summary per project. Key fields: log_id, log_date, project_id, huvibar_headcount, sub_headcount, total_headcount, huvibar_hours, sub_hours, total_hours, weather_condition."
+              column_configs:
+                - column_name: "log_date"
+                - column_name: "total_hours"
+                - column_name: "total_headcount"
+                - column_name: "huvibar_hours"
+                - column_name: "sub_hours"
+            - identifier: "css_genie.project_tracking.projects"
+              description:
+                - "Master project list. Key fields: project_id, project_name, status, contract_value, project_type, start_date, end_date, project_manager."
+              column_configs:
+                - column_name: "project_name"
+                - column_name: "status"
+            - identifier: "css_genie.project_tracking.employees"
+              description:
+                - "Employee master record. Key fields: employee_id, first_name, last_name, role, department, trade, hire_date, employment_type."
+              column_configs:
+                - column_name: "trade"
+                - column_name: "employment_type"
+        instructions:
+          text_instructions:
+            - id: "f3155fef50e04609b4ee1d6f63c66943"
+              content:
+                - "You are a scheduling and workforce analytics assistant for Huvibar Construction, a general contractor managing 25 active projects with approximately 200 direct employees and 60+ subcontractors."
+                - "BUSINESS CONTEXT: Huvibar self-performs carpentry, concrete, and general labor while subcontracting specialty trades (electrical, mechanical, roofing). Scheduling efficiency directly impacts both project profitability and contractual milestone commitments."
+                - "KEY FIELDS: In crew_schedules, use work_date for date filtering and trade for breakdowns. In daily_manpower_log, use log_date and total_hours for aggregate reporting. In subcontractor_schedules, status='active' means the sub is currently mobilized on site."
+                - "METRICS FORMULAS: Overtime rate = overtime_hours / hours_worked * 100. Equipment utilization = hours_operated / (standard 8-hr day) * 100. Peak headcount = MAX(total_headcount) per project per period. Weekly labor cost estimate = hours_worked * avg_loaded_rate by trade."
+                - "TRADE TYPES: carpenter, ironworker, electrician, plumber, laborer, foreman, general superintendent. When users ask about 'self-perform' labor, filter to huvibar_hours from daily_manpower_log or join crew_schedules to employees."
+                - "ANSWERING GUIDANCE: Use date_trunc('month', current_date()) for 'this month' and date_trunc('week', current_date()) for 'this week'. For named project lookups, always JOIN scheduling tables to css_genie.project_tracking.projects on project_id. Subcontractor crew counts come from subcontractor_schedules.crew_size. For overtime breakdowns by trade, join crew_schedules to employees on employee_id and group by employees.trade."
+          example_question_sqls:
+            - id: "5d20688ed951458986e19130f10f9ad1"
+              question:
+                - "Total labor hours by project this month"
+              sql:
+                - |
+                  SELECT
+                    p.project_name,
+                    dml.project_id,
+                    SUM(dml.total_hours)      AS total_hours,
+                    SUM(dml.huvibar_hours)    AS huvibar_hours,
+                    SUM(dml.sub_hours)        AS sub_hours,
+                    COUNT(DISTINCT dml.log_date) AS days_worked
+                  FROM css_genie.scheduling.daily_manpower_log dml
+                  JOIN css_genie.project_tracking.projects p
+                    ON dml.project_id = p.project_id
+                  WHERE dml.log_date >= date_trunc('month', current_date())
+                  GROUP BY p.project_name, dml.project_id
+                  ORDER BY total_hours DESC
+            - id: "48b2e9ac28fb4d3e8126508247a18378"
+              question:
+                - "Equipment utilization by type across all projects"
+              sql:
+                - |
+                  SELECT
+                    equipment_type,
+                    COUNT(DISTINCT equipment_id)     AS equipment_count,
+                    ROUND(AVG(hours_operated), 2)    AS avg_daily_hours,
+                    ROUND(MAX(hours_operated), 2)    AS max_daily_hours,
+                    ROUND(SUM(hours_operated), 0)    AS total_hours,
+                    ROUND(AVG(hours_operated) / 8.0 * 100, 1) AS utilization_pct
+                  FROM css_genie.scheduling.equipment_schedules
+                  GROUP BY equipment_type
+                  ORDER BY total_hours DESC
+            - id: "1f2299b36191424daf548219a6e8c48f"
+              question:
+                - "Which subcontractors are currently active on site?"
+              sql:
+                - |
+                  SELECT
+                    p.project_name,
+                    ss.sub_id,
+                    ss.phase,
+                    ss.crew_size,
+                    ss.planned_start_date,
+                    ss.planned_end_date,
+                    ss.actual_start_date,
+                    ss.status
+                  FROM css_genie.scheduling.subcontractor_schedules ss
+                  JOIN css_genie.project_tracking.projects p
+                    ON ss.project_id = p.project_id
+                  WHERE ss.status = 'active'
+                  ORDER BY ss.crew_size DESC

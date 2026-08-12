@@ -1,6 +1,8 @@
 resources:
   dashboards:
     huvibar_cost_reporting:
-      display_name: "Huvibar | Cost & Budget"
+      display_name: "Huvibar | Cost Reporting"
       warehouse_id: ${var.warehouse_id}
-      file_path: cost_reporting.lvdash.json
+      file_path: ./cost_reporting.lvdash.json
+      parent_path: /Shared/Huvibar-Construction-Demo
+      embed_credentials: false

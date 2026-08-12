@@ -2,91 +2,121 @@ resources:
   genie_spaces:
     huvibar_payments:
       display_name: "Huvibar | Payment Pipeline"
-      warehouse_id: ${var.warehouse_id}
       description: "AIA payment application pipeline, retainage tracking, lien waiver management, and cash flow visibility across all Huvibar projects."
-      instructions: |
-        You are a payment pipeline analytics assistant for Huvibar Construction. Huvibar submits payment applications to owners following the AIA G702/G703 format, the construction industry standard for monthly pay requests.
-
-        **Payment application process:**
-        Pay applications move through a defined status workflow: draft → submitted → approved → paid. The submitted_date and paid_date fields record when each transition occurred.
-
-        **Data available:**
-        - pay_applications: Monthly pay requests with application_id, project_id, application_number, period_end_date, submitted_date, approved_date, paid_date, work_completed_to_date, materials_stored, retainage_amount, amount_due, and status.
-        - schedule_of_values (SOV): Line-item breakdown of the contract value with sov_id, pay_application_id, description, scheduled_value, work_completed_pct, and retainage_pct.
-        - lien_waivers: Waivers tied to pay applications with type ('conditional' or 'unconditional'), executed_date, and amount.
-        - payment_ledger: Actual cash receipts and disbursements with ledger_id, project_id, pay_application_id, transaction_date, amount, and transaction_type.
-        - projects: Master project reference.
-
-        **Retainage rules:**
-        - Retainage is typically withheld at 10% of each pay application until substantial completion, then often reduced to 5%.
-        - retainage_amount in pay_applications is the cumulative retainage held.
-        - Total retainage released is visible in the payment_ledger as transaction_type = 'retainage_release'.
-
-        **Lien waiver types:**
-        - Conditional: Provided with the pay request; takes effect only upon actual payment.
-        - Unconditional: Provided after payment is received; final waiver of lien rights for amounts paid.
-
-        **Key metrics:**
-        - Outstanding AR: SUM(amount_due) WHERE status IN ('submitted', 'approved').
-        - Retainage balance: SUM(retainage_amount) WHERE status != 'paid'.
-        - Days to payment: DATEDIFF(paid_date, submitted_date).
-
-        **Answering guidance:**
-        - Always filter by status carefully — 'paid' applications are historical; 'submitted' and 'approved' represent open receivables.
-        - When users ask about cash flow, reference both amount_due (pending) and payment_ledger (received).
-        - JOIN to projects for named project context.
-      tables:
-        - name: "${var.catalog}.payments.pay_applications"
-        - name: "${var.catalog}.payments.schedule_of_values"
-        - name: "${var.catalog}.payments.lien_waivers"
-        - name: "${var.catalog}.payments.payment_ledger"
-        - name: "${var.catalog}.project_tracking.projects"
-      verified_queries:
-        - name: "Outstanding pay applications"
-          description: "All submitted or approved pay applications with the amount due and number of days since submission."
-          query: |
-            SELECT
-              p.project_name,
-              pa.application_number,
-              pa.submitted_date,
-              pa.status,
-              pa.amount_due,
-              pa.retainage_amount,
-              DATEDIFF(current_date(), pa.submitted_date) AS days_since_submitted
-            FROM ${var.catalog}.payments.pay_applications pa
-            JOIN ${var.catalog}.project_tracking.projects p
-              ON pa.project_id = p.project_id
-            WHERE pa.status IN ('submitted', 'approved')
-            ORDER BY days_since_submitted DESC
-
-        - name: "Retainage balance by project"
-          description: "Total retainage currently held (not yet paid) per project."
-          query: |
-            SELECT
-              p.project_name,
-              pa.project_id,
-              SUM(pa.retainage_amount) AS retainage_held,
-              COUNT(pa.application_id) AS application_count
-            FROM ${var.catalog}.payments.pay_applications pa
-            JOIN ${var.catalog}.project_tracking.projects p
-              ON pa.project_id = p.project_id
-            WHERE pa.status != 'paid'
-            GROUP BY p.project_name, pa.project_id
-            ORDER BY retainage_held DESC
-
-        - name: "Average days to payment by project"
-          description: "Average elapsed days between pay application submission and payment receipt, grouped by project."
-          query: |
-            SELECT
-              p.project_name,
-              pa.project_id,
-              COUNT(pa.application_id)                              AS paid_applications,
-              ROUND(AVG(DATEDIFF(pa.paid_date, pa.submitted_date)), 1) AS avg_days_to_payment,
-              MIN(DATEDIFF(pa.paid_date, pa.submitted_date))        AS min_days,
-              MAX(DATEDIFF(pa.paid_date, pa.submitted_date))        AS max_days
-            FROM ${var.catalog}.payments.pay_applications pa
-            JOIN ${var.catalog}.project_tracking.projects p
-              ON pa.project_id = p.project_id
-            WHERE pa.paid_date IS NOT NULL
-            GROUP BY p.project_name, pa.project_id
-            ORDER BY avg_days_to_payment DESC
+      warehouse_id: ${var.warehouse_id}
+      serialized_space:
+        version: 2
+        config:
+          sample_questions:
+            - id: "60d2048339e24dcba74e06ec4efa886a"
+              question:
+                - "What pay applications are outstanding and how much do we have pending?"
+            - id: "ec2dfca501164545bf53e3f5841924bf"
+              question:
+                - "How much retainage are we holding across all projects?"
+            - id: "3d52ae7213384724a70591739c45e68b"
+              question:
+                - "What's the average time from pay app submission to payment?"
+        data_sources:
+          tables:
+            - identifier: "css_genie.payments.pay_applications"
+              description:
+                - "Monthly AIA-format pay requests. Key fields: application_id, project_id, application_number, period_end_date, submitted_date, approved_date, paid_date, work_completed_to_date, materials_stored, retainage_amount, amount_due, status. Status workflow: draft → submitted → approved → paid."
+              column_configs:
+                - column_name: "status"
+                - column_name: "submitted_date"
+                - column_name: "paid_date"
+                - column_name: "amount_due"
+                - column_name: "retainage_amount"
+            - identifier: "css_genie.payments.schedule_of_values"
+              description:
+                - "Line-item breakdown of contract value per pay application. Key fields: sov_id, pay_application_id, description, scheduled_value, work_completed_pct, retainage_pct."
+              column_configs:
+                - column_name: "scheduled_value"
+                - column_name: "work_completed_pct"
+                - column_name: "retainage_pct"
+            - identifier: "css_genie.payments.lien_waivers"
+              description:
+                - "Lien waivers tied to pay applications. Key fields: waiver_id, pay_application_id, type (conditional or unconditional), executed_date, amount."
+              column_configs:
+                - column_name: "type"
+                - column_name: "executed_date"
+            - identifier: "css_genie.payments.payment_ledger"
+              description:
+                - "Actual cash receipts and disbursements. Key fields: ledger_id, project_id, pay_application_id, transaction_date, amount, transaction_type. transaction_type values include: payment_receipt, retainage_release."
+              column_configs:
+                - column_name: "transaction_type"
+                - column_name: "transaction_date"
+                - column_name: "amount"
+            - identifier: "css_genie.project_tracking.projects"
+              description:
+                - "Master project list. Key fields: project_id, project_name, status, contract_value, project_type, start_date, end_date, project_manager."
+              column_configs:
+                - column_name: "project_name"
+                - column_name: "status"
+                - column_name: "contract_value"
+        instructions:
+          text_instructions:
+            - id: "6f99695a28e74193beff519754cb7d91"
+              content:
+                - "You are a payment pipeline analytics assistant for Huvibar Construction. Huvibar submits AIA G702/G703 format payment applications to owners monthly, and manages subcontractor pay-downs in parallel."
+                - "PAYMENT WORKFLOW: Applications move through draft → submitted → approved → paid. submitted_date and paid_date record when each transition occurred. Always filter by status carefully — 'paid' applications are historical; 'submitted' and 'approved' represent open receivables."
+                - "RETAINAGE RULES: Retainage is typically withheld at 10% of each pay application until substantial completion, then reduced to 5%. retainage_amount in pay_applications is the cumulative retainage held. Retainage releases appear in payment_ledger as transaction_type = 'retainage_release'."
+                - "LIEN WAIVERS: Conditional waivers are submitted with the pay request and take effect only upon actual payment. Unconditional waivers are provided after payment is received and represent final waiver of lien rights for amounts paid."
+                - "KEY METRICS: Outstanding AR = SUM(amount_due) WHERE status IN ('submitted', 'approved'). Total retainage balance = SUM(retainage_amount) WHERE status != 'paid'. Days to payment = DATEDIFF(paid_date, submitted_date). Billing efficiency = work_completed_to_date / contract_value * 100."
+                - "ANSWERING GUIDANCE: For cash flow questions, reference both amount_due from pay_applications (what is owed) and payment_ledger (what has been received). When users ask about a named project, always JOIN to css_genie.project_tracking.projects on project_id. Schedule of values breakdowns require joining sov to pay_applications on pay_application_id."
+          example_question_sqls:
+            - id: "603d01e8cb684280a3ce900ad9ef1e4c"
+              question:
+                - "What pay applications are outstanding?"
+              sql:
+                - |
+                  SELECT
+                    p.project_name,
+                    pa.application_number,
+                    pa.period_end_date,
+                    pa.submitted_date,
+                    pa.status,
+                    pa.amount_due,
+                    pa.retainage_amount,
+                    DATEDIFF(current_date(), pa.submitted_date) AS days_since_submitted
+                  FROM css_genie.payments.pay_applications pa
+                  JOIN css_genie.project_tracking.projects p
+                    ON pa.project_id = p.project_id
+                  WHERE pa.status IN ('submitted', 'approved')
+                  ORDER BY days_since_submitted DESC
+            - id: "149716c63c424159872a72c769e21867"
+              question:
+                - "How much retainage are we holding by project?"
+              sql:
+                - |
+                  SELECT
+                    p.project_name,
+                    pa.project_id,
+                    SUM(pa.retainage_amount)    AS retainage_held,
+                    COUNT(pa.application_id)    AS application_count,
+                    SUM(pa.work_completed_to_date) AS billed_to_date
+                  FROM css_genie.payments.pay_applications pa
+                  JOIN css_genie.project_tracking.projects p
+                    ON pa.project_id = p.project_id
+                  WHERE pa.status != 'paid'
+                  GROUP BY p.project_name, pa.project_id
+                  ORDER BY retainage_held DESC
+            - id: "0092c638429a448fa3ae8fe7c65118e3"
+              question:
+                - "What is the average time from pay app submission to payment by project?"
+              sql:
+                - |
+                  SELECT
+                    p.project_name,
+                    pa.project_id,
+                    COUNT(pa.application_id)                                  AS paid_applications,
+                    ROUND(AVG(DATEDIFF(pa.paid_date, pa.submitted_date)), 1)  AS avg_days_to_payment,
+                    MIN(DATEDIFF(pa.paid_date, pa.submitted_date))            AS min_days,
+                    MAX(DATEDIFF(pa.paid_date, pa.submitted_date))            AS max_days
+                  FROM css_genie.payments.pay_applications pa
+                  JOIN css_genie.project_tracking.projects p
+                    ON pa.project_id = p.project_id
+                  WHERE pa.paid_date IS NOT NULL
+                  GROUP BY p.project_name, pa.project_id
+                  ORDER BY avg_days_to_payment DESC

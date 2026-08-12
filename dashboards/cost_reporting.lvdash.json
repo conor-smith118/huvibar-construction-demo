@@ -1,12 +1,40 @@
 {
+  "datasets": [
+    {
+      "name": "total_budget",
+      "displayName": "Total Budget",
+      "query": "SELECT ROUND(SUM(current_budget)/1000000,1) AS budget_m FROM css_genie.cost_reporting.budget_line_items b JOIN css_genie.project_tracking.projects p ON b.project_id = p.project_id WHERE p.status = 'active'"
+    },
+    {
+      "name": "total_actuals",
+      "displayName": "Total Actuals",
+      "query": "SELECT ROUND(SUM(amount)/1000000,1) AS actuals_m FROM css_genie.cost_reporting.actual_costs ac JOIN css_genie.project_tracking.projects p ON ac.project_id = p.project_id WHERE p.status = 'active'"
+    },
+    {
+      "name": "approved_cos",
+      "displayName": "Approved Change Orders",
+      "query": "SELECT ROUND(SUM(amount)/1000000,2) AS co_value_m FROM css_genie.cost_reporting.change_orders WHERE status = 'approved'"
+    },
+    {
+      "name": "budget_vs_actual",
+      "displayName": "Budget vs Actual",
+      "query": "SELECT p.project_name, ROUND(SUM(b.current_budget)/1000000,2) AS budget_m, ROUND(SUM(ac.amount)/1000000,2) AS actual_m FROM css_genie.project_tracking.projects p LEFT JOIN css_genie.cost_reporting.budget_line_items b ON p.project_id = b.project_id LEFT JOIN css_genie.cost_reporting.actual_costs ac ON p.project_id = ac.project_id WHERE p.status = 'active' GROUP BY p.project_name ORDER BY budget_m DESC"
+    },
+    {
+      "name": "monthly_burn",
+      "displayName": "Monthly Burn",
+      "query": "SELECT date_format(date_trunc('month', transaction_date), 'yyyy-MM') AS month, cost_type, ROUND(SUM(amount)/1000,0) AS amount_k FROM css_genie.cost_reporting.actual_costs WHERE transaction_date >= add_months(current_date(), -12) GROUP BY month, cost_type ORDER BY month"
+    }
+  ],
   "pages": [
     {
+      "name": "cost_reporting",
       "displayName": "Cost & Budget",
       "layout": [
         {
           "widget": {
-            "name": "counter_total_budget",
-            "title": "Total Active Budget",
+            "name": "w_budget",
+            "title": "Total Budget ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -14,8 +42,8 @@
                   "datasetName": "total_budget",
                   "fields": [
                     {
-                      "fieldName": "total",
-                      "displayAs": "TOTAL"
+                      "name": "budget_m",
+                      "expression": "`budget_m`"
                     }
                   ],
                   "disaggregated": false
@@ -27,13 +55,8 @@
               "widgetType": "counter",
               "encodings": {
                 "value": {
-                  "fieldName": "total",
-                  "displayName": "Total Budget",
-                  "numberFormat": {
-                    "type": "currency",
-                    "currency": "USD",
-                    "compact": true
-                  }
+                  "fieldName": "budget_m",
+                  "displayName": "Total Budget ($M)"
                 }
               }
             }
@@ -47,8 +70,8 @@
         },
         {
           "widget": {
-            "name": "counter_total_actuals",
-            "title": "Total Actual Costs",
+            "name": "w_actuals",
+            "title": "Total Actuals ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -56,8 +79,8 @@
                   "datasetName": "total_actuals",
                   "fields": [
                     {
-                      "fieldName": "total",
-                      "displayAs": "TOTAL"
+                      "name": "actuals_m",
+                      "expression": "`actuals_m`"
                     }
                   ],
                   "disaggregated": false
@@ -69,13 +92,8 @@
               "widgetType": "counter",
               "encodings": {
                 "value": {
-                  "fieldName": "total",
-                  "displayName": "Total Actuals",
-                  "numberFormat": {
-                    "type": "currency",
-                    "currency": "USD",
-                    "compact": true
-                  }
+                  "fieldName": "actuals_m",
+                  "displayName": "Total Actuals ($M)"
                 }
               }
             }
@@ -89,8 +107,8 @@
         },
         {
           "widget": {
-            "name": "counter_approved_cos",
-            "title": "Approved Change Orders",
+            "name": "w_cos",
+            "title": "Approved COs ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -98,8 +116,8 @@
                   "datasetName": "approved_cos",
                   "fields": [
                     {
-                      "fieldName": "total",
-                      "displayAs": "TOTAL"
+                      "name": "co_value_m",
+                      "expression": "`co_value_m`"
                     }
                   ],
                   "disaggregated": false
@@ -111,13 +129,8 @@
               "widgetType": "counter",
               "encodings": {
                 "value": {
-                  "fieldName": "total",
-                  "displayName": "Approved COs",
-                  "numberFormat": {
-                    "type": "currency",
-                    "currency": "USD",
-                    "compact": true
-                  }
+                  "fieldName": "co_value_m",
+                  "displayName": "Approved COs ($M)"
                 }
               }
             }
@@ -131,45 +144,8 @@
         },
         {
           "widget": {
-            "name": "counter_over_budget",
-            "title": "Projects Over Budget",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "over_budget_count",
-                  "fields": [
-                    {
-                      "fieldName": "count",
-                      "displayAs": "COUNT"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 2,
-              "widgetType": "counter",
-              "encodings": {
-                "value": {
-                  "fieldName": "count",
-                  "displayName": "Projects Over Budget"
-                }
-              }
-            }
-          },
-          "position": {
-            "x": 3,
-            "y": 3,
-            "width": 3,
-            "height": 3
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_budget_vs_actual",
-            "title": "Budget vs. Actual by Project",
+            "name": "w_bva",
+            "title": "Budget vs Actual ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -177,20 +153,12 @@
                   "datasetName": "budget_vs_actual",
                   "fields": [
                     {
-                      "fieldName": "project_name",
-                      "displayAs": "Project"
+                      "name": "project_name",
+                      "expression": "`project_name`"
                     },
                     {
-                      "fieldName": "budget",
-                      "displayAs": "Budget"
-                    },
-                    {
-                      "fieldName": "actual_cost",
-                      "displayAs": "Actual Cost"
-                    },
-                    {
-                      "fieldName": "eac",
-                      "displayAs": "EAC"
+                      "name": "budget_m",
+                      "expression": "`budget_m`"
                     }
                   ],
                   "disaggregated": true
@@ -203,21 +171,11 @@
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "Project",
-                  "axis": {
-                    "title": "Project"
-                  }
+                  "displayName": "project_name"
                 },
                 "y": {
-                  "fieldName": "budget",
-                  "displayName": "Amount ($)",
-                  "axis": {
-                    "title": "Amount (USD)"
-                  }
-                },
-                "color": {
-                  "fieldName": "budget",
-                  "displayName": "Metric"
+                  "fieldName": "budget_m",
+                  "displayName": "budget_m"
                 }
               }
             }
@@ -231,25 +189,25 @@
         },
         {
           "widget": {
-            "name": "line_monthly_burn_rate",
-            "title": "Monthly Burn Rate by Cost Type",
+            "name": "w_burn",
+            "title": "Monthly Burn by Cost Type",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "monthly_burn_rate",
+                  "datasetName": "monthly_burn",
                   "fields": [
                     {
-                      "fieldName": "month",
-                      "displayAs": "Month"
+                      "name": "month",
+                      "expression": "`month`"
                     },
                     {
-                      "fieldName": "cost_type",
-                      "displayAs": "Cost Type"
+                      "name": "cost_type",
+                      "expression": "`cost_type`"
                     },
                     {
-                      "fieldName": "total",
-                      "displayAs": "Total"
+                      "name": "amount_k",
+                      "expression": "`amount_k`"
                     }
                   ],
                   "disaggregated": true
@@ -258,120 +216,33 @@
             ],
             "spec": {
               "version": 2,
-              "widgetType": "line",
+              "widgetType": "table",
               "encodings": {
-                "x": {
-                  "fieldName": "month",
-                  "displayName": "Month",
-                  "axis": {
-                    "title": "Month"
+                "columns": [
+                  {
+                    "fieldName": "month",
+                    "displayName": "month"
+                  },
+                  {
+                    "fieldName": "cost_type",
+                    "displayName": "cost_type"
+                  },
+                  {
+                    "fieldName": "amount_k",
+                    "displayName": "amount_k"
                   }
-                },
-                "y": {
-                  "fieldName": "total",
-                  "displayName": "Total Cost",
-                  "axis": {
-                    "title": "Cost (USD)"
-                  }
-                },
-                "color": {
-                  "fieldName": "cost_type",
-                  "displayName": "Cost Type"
-                }
+                ]
               }
             }
           },
           "position": {
             "x": 0,
             "y": 12,
-            "width": 4,
-            "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "pie_cost_by_type",
-            "title": "Cost Mix by Type",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "cost_by_type",
-                  "fields": [
-                    {
-                      "fieldName": "cost_type",
-                      "displayAs": "Cost Type"
-                    },
-                    {
-                      "fieldName": "total",
-                      "displayAs": "Total"
-                    }
-                  ],
-                  "disaggregated": true
-                }
-              }
-            ],
-            "spec": {
-              "version": 2,
-              "widgetType": "pie",
-              "encodings": {
-                "angle": {
-                  "fieldName": "total",
-                  "displayName": "Total"
-                },
-                "color": {
-                  "fieldName": "cost_type",
-                  "displayName": "Cost Type"
-                }
-              }
-            }
-          },
-          "position": {
-            "x": 4,
-            "y": 12,
-            "width": 2,
-            "height": 5
+            "width": 6,
+            "height": 7
           }
         }
-      ],
-      "datasets": [
-        {
-          "name": "total_budget",
-          "displayName": "Total Active Budget",
-          "query": "SELECT SUM(current_budget) as total FROM css_genie.cost_reporting.budget_line_items b JOIN css_genie.project_tracking.projects p ON b.project_id = p.project_id WHERE p.status = 'active'"
-        },
-        {
-          "name": "total_actuals",
-          "displayName": "Total Actual Costs",
-          "query": "SELECT SUM(amount) as total FROM css_genie.cost_reporting.actual_costs ac JOIN css_genie.project_tracking.projects p ON ac.project_id = p.project_id WHERE p.status = 'active'"
-        },
-        {
-          "name": "approved_cos",
-          "displayName": "Approved Change Orders",
-          "query": "SELECT SUM(amount) as total FROM css_genie.cost_reporting.change_orders WHERE status = 'approved'"
-        },
-        {
-          "name": "over_budget_count",
-          "displayName": "Projects Over Budget",
-          "query": "SELECT COUNT(DISTINCT project_id) as count FROM css_genie.cost_reporting.cost_forecast WHERE variance_amount > 0 AND forecast_month = (SELECT MAX(forecast_month) FROM css_genie.cost_reporting.cost_forecast)"
-        },
-        {
-          "name": "budget_vs_actual",
-          "displayName": "Budget vs Actual",
-          "query": "SELECT p.project_name, SUM(b.current_budget) as budget, SUM(ac.amount) as actual_cost, SUM(cf.estimate_at_completion) as eac, SUM(cf.variance_amount) as variance FROM css_genie.project_tracking.projects p LEFT JOIN css_genie.cost_reporting.budget_line_items b ON p.project_id = b.project_id LEFT JOIN css_genie.cost_reporting.actual_costs ac ON p.project_id = ac.project_id LEFT JOIN css_genie.cost_reporting.cost_forecast cf ON p.project_id = cf.project_id AND cf.forecast_month = (SELECT MAX(forecast_month) FROM css_genie.cost_reporting.cost_forecast) WHERE p.status = 'active' GROUP BY p.project_name"
-        },
-        {
-          "name": "monthly_burn_rate",
-          "displayName": "Monthly Burn Rate",
-          "query": "SELECT date_trunc('month', transaction_date) as month, cost_type, SUM(amount) as total FROM css_genie.cost_reporting.actual_costs WHERE transaction_date >= add_months(current_date(), -12) GROUP BY month, cost_type ORDER BY month"
-        },
-        {
-          "name": "cost_by_type",
-          "displayName": "Cost by Type",
-          "query": "SELECT cost_type, SUM(amount) as total FROM css_genie.cost_reporting.actual_costs GROUP BY cost_type"
-        }
-      ],
-      "name": "cost_reporting"
+      ]
     }
   ]
 }

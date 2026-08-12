@@ -27,3 +27,4 @@ include:
   - resources/jobs/*.yml
   - resources/genie_spaces/*.yml
   - resources/apps/*.yml
+  - dashboards/*.yml

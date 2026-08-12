@@ -2,103 +2,139 @@ resources:
   genie_spaces:
     huvibar_project_tracking:
       display_name: "Huvibar | Project Tracking"
-      warehouse_id: ${var.warehouse_id}
       description: "Master project status, milestone schedule health, RFI and submittal tracking, daily reports, and closeout punch list management across Huvibar's portfolio."
-      instructions: |
-        You are a project tracking analytics assistant for Huvibar Construction. This space provides visibility into the operational health of all 25 active projects spanning 2020–2025, with contract values ranging from $5M to $150M.
-
-        **Data available:**
-        - projects: Master list with project_id, project_name, owner, contract_value, contract_type, start_date, planned_completion_date, actual_completion_date, and status.
-        - milestones: 8 standard milestones per project (e.g., NTP, foundation complete, structure complete, MEP rough-in, substantial completion) with milestone_id, project_id, milestone_name, planned_date, actual_date, and status.
-        - rfis: Requests for Information with rfi_id, project_id, rfi_number, subject, submitted_date, required_response_date, responded_date, days_open (pre-calculated), ball_in_court, and status.
-        - submittals: Shop drawing and product data submissions with submittal_id, project_id, spec_section, submittal_type, submitted_date, returned_date, status, and revision_number.
-        - daily_reports: Weather and field conditions log with report_id, project_id, report_date, weather_conditions, temperature_high, temperature_low, total_headcount, and superintendent_notes.
-        - punch_list_items: Closeout deficiency items with item_id, project_id, description, priority, assigned_to, created_date, completed_date, and status.
-
-        **RFI guidance:**
-        - Industry SLA for RFI response is 14 days.
-        - days_open is pre-calculated — no date arithmetic needed.
-        - ball_in_court indicates who currently owes a response: 'contractor', 'owner', 'architect', or 'engineer'.
-        - Filter status = 'open' for active RFIs; status = 'closed' for resolved.
-
-        **Submittal types:** shop_drawing, product_data, sample, closeout.
-        **Submittal status flow:** pending → submitted → under_review → approved / approved_as_noted / revise_resubmit / rejected.
-
-        **Milestone schedule health:**
-        - If actual_date IS NULL and planned_date < current_date(), the milestone is late.
-        - DATEDIFF(actual_date, planned_date) gives variance in days (positive = late).
-
-        **Punch list priorities:** critical, high, medium, low.
-
-        **Answering guidance:**
-        - When users ask about a specific project, JOIN on project_name if they use the name.
-        - For schedule questions, compare planned_date vs actual_date in milestones.
-        - For RFI aging, use days_open directly rather than recomputing from submitted_date.
-        - Submittal spec_section follows CSI format (e.g., '03 30 00' for cast-in-place concrete).
-      tables:
-        - name: "${var.catalog}.project_tracking.projects"
-        - name: "${var.catalog}.project_tracking.milestones"
-        - name: "${var.catalog}.project_tracking.rfis"
-        - name: "${var.catalog}.project_tracking.submittals"
-        - name: "${var.catalog}.project_tracking.daily_reports"
-        - name: "${var.catalog}.project_tracking.punch_list_items"
-      verified_queries:
-        - name: "Open RFIs over 14 days"
-          description: "All open RFIs that have exceeded the 14-day industry response SLA, sorted by longest outstanding first."
-          query: |
-            SELECT
-              p.project_name,
-              r.rfi_number,
-              r.subject,
-              r.submitted_date,
-              r.days_open,
-              r.ball_in_court,
-              r.required_response_date
-            FROM ${var.catalog}.project_tracking.rfis r
-            JOIN ${var.catalog}.project_tracking.projects p
-              ON r.project_id = p.project_id
-            WHERE r.status = 'open'
-              AND r.days_open > 14
-            ORDER BY r.days_open DESC
-
-        - name: "Milestone schedule health"
-          description: "All project milestones with planned vs. actual dates and schedule variance in days."
-          query: |
-            SELECT
-              p.project_name,
-              m.milestone_name,
-              m.planned_date,
-              m.actual_date,
-              m.status,
-              CASE
-                WHEN m.actual_date IS NOT NULL
-                  THEN DATEDIFF(m.actual_date, m.planned_date)
-                WHEN m.planned_date < current_date()
-                  THEN DATEDIFF(current_date(), m.planned_date)
-                ELSE NULL
-              END                        AS days_variance,
-              CASE
-                WHEN m.actual_date IS NOT NULL AND m.actual_date <= m.planned_date THEN 'On Time'
-                WHEN m.actual_date IS NOT NULL AND m.actual_date > m.planned_date  THEN 'Completed Late'
-                WHEN m.actual_date IS NULL AND m.planned_date >= current_date()    THEN 'Upcoming'
-                ELSE 'Overdue'
-              END                        AS schedule_status
-            FROM ${var.catalog}.project_tracking.milestones m
-            JOIN ${var.catalog}.project_tracking.projects p
-              ON m.project_id = p.project_id
-            ORDER BY p.project_name, m.planned_date
-
-        - name: "Submittal register by status"
-          description: "Count of submittals grouped by current status and spec section."
-          query: |
-            SELECT
-              p.project_name,
-              s.spec_section,
-              s.submittal_type,
-              s.status,
-              COUNT(s.submittal_id) AS submittal_count
-            FROM ${var.catalog}.project_tracking.submittals s
-            JOIN ${var.catalog}.project_tracking.projects p
-              ON s.project_id = p.project_id
-            GROUP BY p.project_name, s.spec_section, s.submittal_type, s.status
-            ORDER BY p.project_name, s.spec_section, s.status
+      warehouse_id: ${var.warehouse_id}
+      serialized_space:
+        version: 2
+        config:
+          sample_questions:
+            - id: "6d7f539176b241278a93f8ea7b09f7e7"
+              question:
+                - "Which projects have open RFIs older than 14 days?"
+            - id: "aafe67de7acf45e09b9d969c5bfa6317"
+              question:
+                - "Show me milestone schedule health across all active projects"
+            - id: "c76867fc144e43e88286a0cfc3f4b985"
+              question:
+                - "How many submittals are waiting for approval?"
+        data_sources:
+          tables:
+            - identifier: "css_genie.project_tracking.projects"
+              description:
+                - "Master project list. Key fields: project_id, project_name, owner, contract_value, contract_type, start_date, planned_completion_date, actual_completion_date, status, project_manager."
+              column_configs:
+                - column_name: "project_name"
+                - column_name: "status"
+                - column_name: "contract_value"
+                - column_name: "planned_completion_date"
+            - identifier: "css_genie.project_tracking.milestones"
+              description:
+                - "8 standard milestones per project (NTP, foundation complete, structure complete, MEP rough-in, substantial completion, etc.). Key fields: milestone_id, project_id, milestone_name, planned_date, actual_date, status."
+              column_configs:
+                - column_name: "milestone_name"
+                - column_name: "planned_date"
+                - column_name: "actual_date"
+                - column_name: "status"
+            - identifier: "css_genie.project_tracking.rfis"
+              description:
+                - "Requests for Information. Key fields: rfi_id, project_id, rfi_number, subject, submitted_date, required_response_date, responded_date, days_open (pre-calculated), ball_in_court, status. ball_in_court values: contractor, owner, architect, engineer."
+              column_configs:
+                - column_name: "status"
+                - column_name: "days_open"
+                - column_name: "ball_in_court"
+                - column_name: "submitted_date"
+            - identifier: "css_genie.project_tracking.submittals"
+              description:
+                - "Shop drawings and product data submissions. Key fields: submittal_id, project_id, spec_section (CSI format), submittal_type, submitted_date, returned_date, status, revision_number. Status flow: pending → submitted → under_review → approved / approved_as_noted / revise_resubmit / rejected."
+              column_configs:
+                - column_name: "status"
+                - column_name: "submittal_type"
+                - column_name: "spec_section"
+            - identifier: "css_genie.project_tracking.punch_list_items"
+              description:
+                - "Closeout deficiency items. Key fields: item_id, project_id, description, priority, assigned_to, created_date, completed_date, status. Priority values: critical, high, medium, low."
+              column_configs:
+                - column_name: "priority"
+                - column_name: "status"
+                - column_name: "created_date"
+            - identifier: "css_genie.project_tracking.daily_reports"
+              description:
+                - "Daily field condition logs. Key fields: report_id, project_id, report_date, weather_conditions, temperature_high, temperature_low, total_headcount, superintendent_notes."
+              column_configs:
+                - column_name: "report_date"
+                - column_name: "total_headcount"
+                - column_name: "weather_conditions"
+        instructions:
+          text_instructions:
+            - id: "d1217e41809a420c9d1b32e18072758a"
+              content:
+                - "You are a project tracking analytics assistant for Huvibar Construction. This space provides visibility into the operational health of all 25 active projects spanning 2020-2025, with contract values ranging from $5M to $150M."
+                - "RFI GUIDANCE: Industry SLA for RFI response is 14 days. days_open is pre-calculated on the rfis table — use it directly rather than computing from submitted_date. ball_in_court indicates who currently owes a response: 'contractor', 'owner', 'architect', or 'engineer'. Filter status='open' for active RFIs; status='closed' for resolved."
+                - "SUBMITTAL TYPES: shop_drawing, product_data, sample, closeout. Spec_section follows CSI MasterFormat format (e.g., '03 30 00' for cast-in-place concrete). Submittals waiting for approval = status IN ('submitted', 'under_review'). Revise_resubmit requires contractor action before re-submission."
+                - "MILESTONE SCHEDULE HEALTH: A milestone is late if actual_date IS NULL and planned_date < current_date(). DATEDIFF(actual_date, planned_date) gives variance in days — positive means late, negative means early. Use a CASE expression to categorize as: On Time, Completed Late, Upcoming, or Overdue based on these conditions."
+                - "PUNCH LIST: Punch list items represent closeout deficiencies that must be resolved before final payment. Priority values: critical, high, medium, low. Open items = status != 'completed'. A high open punch list count near planned_completion_date signals project risk."
+                - "ANSWERING GUIDANCE: For named project lookups, JOIN on project_name. For schedule questions, always compute milestone variance using planned_date vs actual_date. For portfolio-level health, aggregate across all projects grouped by project_name. Daily reports provide headcount and weather history — useful for explaining productivity variances."
+          example_question_sqls:
+            - id: "1d8e93e5e1b3458985120b8564380744"
+              question:
+                - "Which projects have open RFIs older than 14 days?"
+              sql:
+                - |
+                  SELECT
+                    p.project_name,
+                    r.rfi_number,
+                    r.subject,
+                    r.submitted_date,
+                    r.days_open,
+                    r.ball_in_court,
+                    r.required_response_date
+                  FROM css_genie.project_tracking.rfis r
+                  JOIN css_genie.project_tracking.projects p
+                    ON r.project_id = p.project_id
+                  WHERE r.status = 'open'
+                    AND r.days_open > 14
+                  ORDER BY r.days_open DESC
+            - id: "3c53d7b4d95647e28888125128d12d63"
+              question:
+                - "Milestone schedule health across all active projects"
+              sql:
+                - |
+                  SELECT
+                    p.project_name,
+                    m.milestone_name,
+                    m.planned_date,
+                    m.actual_date,
+                    m.status,
+                    CASE
+                      WHEN m.actual_date IS NOT NULL
+                        THEN DATEDIFF(m.actual_date, m.planned_date)
+                      WHEN m.planned_date < current_date()
+                        THEN DATEDIFF(current_date(), m.planned_date)
+                      ELSE NULL
+                    END AS days_variance,
+                    CASE
+                      WHEN m.actual_date IS NOT NULL AND m.actual_date <= m.planned_date THEN 'On Time'
+                      WHEN m.actual_date IS NOT NULL AND m.actual_date > m.planned_date  THEN 'Completed Late'
+                      WHEN m.actual_date IS NULL AND m.planned_date >= current_date()    THEN 'Upcoming'
+                      ELSE 'Overdue'
+                    END AS schedule_status
+                  FROM css_genie.project_tracking.milestones m
+                  JOIN css_genie.project_tracking.projects p
+                    ON m.project_id = p.project_id
+                  WHERE p.status = 'active'
+                  ORDER BY p.project_name, m.planned_date
+            - id: "78ed06c683ac400b88b2fd52e1c6a923"
+              question:
+                - "Submittal status summary by project"
+              sql:
+                - |
+                  SELECT
+                    p.project_name,
+                    s.status,
+                    s.submittal_type,
+                    COUNT(s.submittal_id) AS submittal_count
+                  FROM css_genie.project_tracking.submittals s
+                  JOIN css_genie.project_tracking.projects p
+                    ON s.project_id = p.project_id
+                  GROUP BY p.project_name, s.status, s.submittal_type
+                  ORDER BY p.project_name, s.submittal_type, s.status
