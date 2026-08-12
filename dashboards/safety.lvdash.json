@@ -3,63 +3,90 @@
     {
       "name": "kpi_trir",
       "displayName": "TRIR YTD",
-      "query": "SELECT ROUND(COUNT(CASE WHEN osha_recordable=true THEN 1 END)*200000.0/NULLIF(SUM(ml.total_hours),0),2) AS trir FROM css_genie.safety_compliance.incidents i CROSS JOIN (SELECT SUM(total_hours) AS total_hours FROM css_genie.scheduling.daily_manpower_log WHERE year(log_date)=year(current_date())) ml WHERE year(i.incident_date)=year(current_date())"
+      "queryLines": [
+        "SELECT ROUND(COUNT(CASE WHEN osha_recordable=true THEN 1 END)*200000.0/NULLIF(SUM(ml.total_hours),0),2) AS trir FROM css_genie.safety_compliance.incidents i CROSS JOIN (SELECT SUM(total_hours) AS total_hours FROM css_genie.scheduling.daily_manpower_log WHERE year(log_date)=year(current_date())) ml WHERE year(i.incident_date)=year(current_date())"
+      ]
     },
     {
-      "name": "kpi_recordable",
-      "displayName": "Recordable YTD",
-      "query": "SELECT COUNT(*) AS recordable FROM css_genie.safety_compliance.incidents WHERE osha_recordable=true AND year(incident_date)=year(current_date())"
+      "name": "kpi_rec",
+      "displayName": "Recordable Incidents",
+      "queryLines": [
+        "SELECT COUNT(*) AS recordable FROM css_genie.safety_compliance.incidents WHERE osha_recordable=true AND year(incident_date)=year(current_date())"
+      ]
     },
     {
-      "name": "kpi_expired",
-      "displayName": "Expired Certs",
-      "query": "SELECT COUNT(*) AS expired FROM css_genie.safety_compliance.certifications WHERE status='expired'"
+      "name": "kpi_exp",
+      "displayName": "Expired Certifications",
+      "queryLines": [
+        "SELECT COUNT(*) AS expired FROM css_genie.safety_compliance.certifications WHERE status='expired'"
+      ]
     },
     {
-      "name": "kpi_insp_score",
+      "name": "kpi_score",
       "displayName": "Avg Inspection Score",
-      "query": "SELECT ROUND(AVG(overall_score),1) AS avg_score FROM css_genie.safety_compliance.safety_inspections WHERE inspection_date >= date_sub(current_date(),90)"
+      "queryLines": [
+        "SELECT ROUND(AVG(overall_score),1) AS avg_score FROM css_genie.safety_compliance.safety_inspections WHERE inspection_date>=date_sub(current_date(),90)"
+      ]
     },
     {
-      "name": "incidents_type",
+      "name": "inc_type",
       "displayName": "Incidents by Type",
-      "query": "SELECT incident_type, COUNT(*) AS total, SUM(CASE WHEN osha_recordable=true THEN 1 ELSE 0 END) AS recordable FROM css_genie.safety_compliance.incidents GROUP BY incident_type ORDER BY total DESC"
+      "queryLines": [
+        "SELECT incident_type, COUNT(*) AS total FROM css_genie.safety_compliance.incidents GROUP BY incident_type ORDER BY total DESC"
+      ]
     },
     {
-      "name": "insp_by_proj",
-      "displayName": "Inspection Scores",
-      "query": "SELECT p.project_name, ROUND(AVG(si.overall_score),1) AS avg_score, COUNT(*) AS inspections FROM css_genie.safety_compliance.safety_inspections si JOIN css_genie.project_tracking.projects p ON si.project_id=p.project_id WHERE si.inspection_date >= date_sub(current_date(),90) GROUP BY p.project_name ORDER BY avg_score DESC"
+      "name": "severity",
+      "displayName": "Incident Severity",
+      "queryLines": [
+        "SELECT severity, COUNT(*) AS cnt FROM css_genie.safety_compliance.incidents GROUP BY severity ORDER BY cnt DESC"
+      ]
     },
     {
       "name": "monthly_inc",
       "displayName": "Monthly Incidents",
-      "query": "SELECT date_format(date_trunc('month',incident_date),'yyyy-MM') AS month, COUNT(*) AS total, SUM(CASE WHEN osha_recordable=true THEN 1 ELSE 0 END) AS recordable FROM css_genie.safety_compliance.incidents WHERE incident_date >= add_months(current_date(),-18) GROUP BY month ORDER BY month"
+      "queryLines": [
+        "SELECT date_format(date_trunc('month',incident_date),'yyyy-MM') AS month, COUNT(*) AS total FROM css_genie.safety_compliance.incidents WHERE incident_date>=add_months(current_date(),-18) GROUP BY month ORDER BY month"
+      ]
     },
     {
-      "name": "cert_by_type",
-      "displayName": "Certs by Type/Status",
-      "query": "SELECT cert_type, status, COUNT(*) AS cnt FROM css_genie.safety_compliance.certifications GROUP BY cert_type, status ORDER BY cert_type, status"
+      "name": "insp_scores",
+      "displayName": "Inspection Scores",
+      "queryLines": [
+        "SELECT p.project_name, ROUND(AVG(si.overall_score),1) AS avg_score FROM css_genie.safety_compliance.safety_inspections si JOIN css_genie.project_tracking.projects p ON si.project_id=p.project_id WHERE si.inspection_date>=date_sub(current_date(),90) GROUP BY p.project_name ORDER BY avg_score DESC"
+      ]
     },
     {
-      "name": "talks_by_proj",
+      "name": "talks",
       "displayName": "Toolbox Talks",
-      "query": "SELECT p.project_name, COUNT(*) AS talk_count, SUM(t.attendee_count) AS total_attendees FROM css_genie.safety_compliance.toolbox_talks t JOIN css_genie.project_tracking.projects p ON t.project_id=p.project_id WHERE p.status='active' GROUP BY p.project_name ORDER BY talk_count DESC"
+      "queryLines": [
+        "SELECT p.project_name, COUNT(*) AS talk_count FROM css_genie.safety_compliance.toolbox_talks t JOIN css_genie.project_tracking.projects p ON t.project_id=p.project_id WHERE p.status='active' GROUP BY p.project_name ORDER BY talk_count DESC"
+      ]
     },
     {
-      "name": "severity_split",
-      "displayName": "Incident Severity",
-      "query": "SELECT severity, COUNT(*) AS cnt FROM css_genie.safety_compliance.incidents GROUP BY severity ORDER BY cnt DESC"
+      "name": "certs",
+      "displayName": "Cert Status",
+      "queryLines": [
+        "SELECT cert_type, status, COUNT(*) AS cnt FROM css_genie.safety_compliance.certifications GROUP BY cert_type, status ORDER BY cert_type, status"
+      ]
     }
   ],
   "pages": [
     {
       "name": "safety",
       "displayName": "Safety & Compliance",
+      "pageType": "PAGE_TYPE_CANVAS",
       "layout": [
         {
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          },
           "widget": {
-            "name": "kpi_trir",
-            "title": "TRIR (Year-to-Date)",
+            "name": "kpi_trir_c",
+            "title": "TRIR Year-to-Date",
             "queries": [
               {
                 "name": "main_query",
@@ -81,27 +108,27 @@
               "encodings": {
                 "value": {
                   "fieldName": "trir",
-                  "displayName": "TRIR (Year-to-Date)"
+                  "displayName": "TRIR Year-to-Date"
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 0,
-            "width": 2,
-            "height": 3
           }
         },
         {
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          },
           "widget": {
-            "name": "kpi_rec",
+            "name": "kpi_rec_c",
             "title": "Recordable Incidents YTD",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "kpi_recordable",
+                  "datasetName": "kpi_rec",
                   "fields": [
                     {
                       "name": "recordable",
@@ -122,23 +149,23 @@
                 }
               }
             }
-          },
-          "position": {
-            "x": 2,
-            "y": 0,
-            "width": 2,
-            "height": 3
           }
         },
         {
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 1,
+            "height": 3
+          },
           "widget": {
-            "name": "kpi_exp",
+            "name": "kpi_exp_c",
             "title": "Expired Certifications",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "kpi_expired",
+                  "datasetName": "kpi_exp",
                   "fields": [
                     {
                       "name": "expired",
@@ -159,23 +186,23 @@
                 }
               }
             }
-          },
-          "position": {
-            "x": 4,
-            "y": 0,
-            "width": 1,
-            "height": 3
           }
         },
         {
+          "position": {
+            "x": 5,
+            "y": 0,
+            "width": 1,
+            "height": 3
+          },
           "widget": {
-            "name": "kpi_score",
+            "name": "kpi_scr_c",
             "title": "Avg Inspection Score",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "kpi_insp_score",
+                  "datasetName": "kpi_score",
                   "fields": [
                     {
                       "name": "avg_score",
@@ -196,23 +223,23 @@
                 }
               }
             }
-          },
-          "position": {
-            "x": 5,
-            "y": 0,
-            "width": 1,
-            "height": 3
           }
         },
         {
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 4,
+            "height": 6
+          },
           "widget": {
-            "name": "bar_inc_type",
+            "name": "bar_inc",
             "title": "Incidents by Type",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "incidents_type",
+                  "datasetName": "inc_type",
                   "fields": [
                     {
                       "name": "incident_type",
@@ -233,31 +260,31 @@
               "encodings": {
                 "x": {
                   "fieldName": "incident_type",
-                  "displayName": "incident_type"
+                  "displayName": "Incident Type"
                 },
                 "y": {
                   "fieldName": "total",
-                  "displayName": "total"
+                  "displayName": "Total"
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 3,
-            "width": 4,
-            "height": 6
           }
         },
         {
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 2,
+            "height": 6
+          },
           "widget": {
-            "name": "pie_severity",
+            "name": "pie_sev",
             "title": "Incident Severity Breakdown",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "severity_split",
+                  "datasetName": "severity",
                   "fields": [
                     {
                       "name": "severity",
@@ -278,26 +305,26 @@
               "encodings": {
                 "label": {
                   "fieldName": "severity",
-                  "displayName": "severity"
+                  "displayName": "Severity"
                 },
                 "value": {
                   "fieldName": "cnt",
-                  "displayName": "cnt"
+                  "displayName": "Cnt"
                 }
               }
             }
-          },
-          "position": {
-            "x": 4,
-            "y": 3,
-            "width": 2,
-            "height": 6
           }
         },
         {
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 6,
+            "height": 5
+          },
           "widget": {
-            "name": "line_monthly",
-            "title": "Monthly Incident Trend \u2014 Last 18 Months",
+            "name": "line_inc",
+            "title": "Monthly Incident Trend \u2014 18 Months",
             "queries": [
               {
                 "name": "main_query",
@@ -323,34 +350,34 @@
               "encodings": {
                 "x": {
                   "fieldName": "month",
-                  "displayName": "month",
+                  "displayName": "Month",
                   "scale": {
                     "type": "temporal"
                   }
                 },
                 "y": {
                   "fieldName": "total",
-                  "displayName": "total"
+                  "displayName": "Total"
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 9,
-            "width": 6,
-            "height": 5
           }
         },
         {
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 4,
+            "height": 5
+          },
           "widget": {
             "name": "bar_insp",
-            "title": "Safety Inspection Scores by Project (90d)",
+            "title": "Inspection Scores by Project (90d)",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "insp_by_proj",
+                  "datasetName": "insp_scores",
                   "fields": [
                     {
                       "name": "project_name",
@@ -371,23 +398,23 @@
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "project_name"
+                  "displayName": "Project Name"
                 },
                 "y": {
                   "fieldName": "avg_score",
-                  "displayName": "avg_score"
+                  "displayName": "Avg Score"
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 14,
-            "width": 4,
-            "height": 5
           }
         },
         {
+          "position": {
+            "x": 4,
+            "y": 14,
+            "width": 2,
+            "height": 5
+          },
           "widget": {
             "name": "bar_talks",
             "title": "Toolbox Talks by Project",
@@ -395,7 +422,7 @@
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "talks_by_proj",
+                  "datasetName": "talks",
                   "fields": [
                     {
                       "name": "project_name",
@@ -416,23 +443,23 @@
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "project_name"
+                  "displayName": "Project Name"
                 },
                 "y": {
                   "fieldName": "talk_count",
-                  "displayName": "talk_count"
+                  "displayName": "Talk Count"
                 }
               }
             }
-          },
-          "position": {
-            "x": 4,
-            "y": 14,
-            "width": 2,
-            "height": 5
           }
         },
         {
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 6,
+            "height": 7
+          },
           "widget": {
             "name": "tbl_certs",
             "title": "Certification Status Detail",
@@ -440,7 +467,7 @@
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "cert_by_type",
+                  "datasetName": "certs",
                   "fields": [
                     {
                       "name": "cert_type",
@@ -479,12 +506,6 @@
                 ]
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 19,
-            "width": 6,
-            "height": 7
           }
         }
       ]

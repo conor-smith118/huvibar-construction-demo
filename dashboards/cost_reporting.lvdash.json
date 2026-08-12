@@ -2,61 +2,88 @@
   "datasets": [
     {
       "name": "kpi_budget",
-      "displayName": "Total Budget",
-      "query": "SELECT ROUND(SUM(current_budget)/1000000,1) AS budget_m FROM css_genie.cost_reporting.budget_line_items b JOIN css_genie.project_tracking.projects p ON b.project_id=p.project_id WHERE p.status='active'"
+      "displayName": "Total Budget $M",
+      "queryLines": [
+        "SELECT ROUND(SUM(current_budget)/1000000,1) AS budget_m FROM css_genie.cost_reporting.budget_line_items b JOIN css_genie.project_tracking.projects p ON b.project_id=p.project_id WHERE p.status='active'"
+      ]
     },
     {
       "name": "kpi_actuals",
-      "displayName": "Total Actuals",
-      "query": "SELECT ROUND(SUM(amount)/1000000,1) AS actuals_m FROM css_genie.cost_reporting.actual_costs ac JOIN css_genie.project_tracking.projects p ON ac.project_id=p.project_id WHERE p.status='active'"
+      "displayName": "Total Actuals $M",
+      "queryLines": [
+        "SELECT ROUND(SUM(amount)/1000000,1) AS actuals_m FROM css_genie.cost_reporting.actual_costs ac JOIN css_genie.project_tracking.projects p ON ac.project_id=p.project_id WHERE p.status='active'"
+      ]
     },
     {
       "name": "kpi_cos",
-      "displayName": "Approved COs",
-      "query": "SELECT ROUND(SUM(amount)/1000000,2) AS co_m FROM css_genie.cost_reporting.change_orders WHERE status='approved'"
+      "displayName": "Approved COs $M",
+      "queryLines": [
+        "SELECT ROUND(SUM(amount)/1000000,2) AS co_m FROM css_genie.cost_reporting.change_orders WHERE status='approved'"
+      ]
     },
     {
       "name": "kpi_commits",
-      "displayName": "Committed Costs",
-      "query": "SELECT ROUND(SUM(committed_amount)/1000000,1) AS committed_m FROM css_genie.cost_reporting.committed_costs cc JOIN css_genie.project_tracking.projects p ON cc.project_id=p.project_id WHERE p.status='active'"
+      "displayName": "Committed $M",
+      "queryLines": [
+        "SELECT ROUND(SUM(committed_amount)/1000000,1) AS committed_m FROM css_genie.cost_reporting.committed_costs cc JOIN css_genie.project_tracking.projects p ON cc.project_id=p.project_id WHERE p.status='active'"
+      ]
     },
     {
-      "name": "cost_by_type",
-      "displayName": "Actuals by Type",
-      "query": "SELECT cost_type, ROUND(SUM(amount)/1000000,2) AS total_m FROM css_genie.cost_reporting.actual_costs ac JOIN css_genie.project_tracking.projects p ON ac.project_id=p.project_id WHERE p.status='active' GROUP BY cost_type ORDER BY total_m DESC"
+      "name": "cost_type",
+      "displayName": "Actuals by Cost Type",
+      "queryLines": [
+        "SELECT cost_type, ROUND(SUM(amount)/1000000,2) AS total_m FROM css_genie.cost_reporting.actual_costs ac JOIN css_genie.project_tracking.projects p ON ac.project_id=p.project_id WHERE p.status='active' GROUP BY cost_type ORDER BY total_m DESC"
+      ]
     },
     {
-      "name": "monthly_burn",
+      "name": "monthly",
       "displayName": "Monthly Burn Rate",
-      "query": "SELECT date_format(date_trunc('month',transaction_date),'yyyy-MM') AS month, ROUND(SUM(amount)/1000000,2) AS spend_m FROM css_genie.cost_reporting.actual_costs ac JOIN css_genie.project_tracking.projects p ON ac.project_id=p.project_id WHERE p.status='active' AND transaction_date >= add_months(current_date(),-12) GROUP BY month ORDER BY month"
+      "queryLines": [
+        "SELECT date_format(date_trunc('month',transaction_date),'yyyy-MM') AS month, ROUND(SUM(amount)/1000000,2) AS spend_m FROM css_genie.cost_reporting.actual_costs ac JOIN css_genie.project_tracking.projects p ON ac.project_id=p.project_id WHERE p.status='active' AND transaction_date>=add_months(current_date(),-12) GROUP BY month ORDER BY month"
+      ]
     },
     {
-      "name": "bva_by_proj",
+      "name": "bva",
       "displayName": "Budget vs Actual",
-      "query": "SELECT p.project_name, ROUND(SUM(b.current_budget)/1000000,1) AS budget_m, ROUND(SUM(ac.amount)/1000000,1) AS actual_m FROM css_genie.project_tracking.projects p LEFT JOIN css_genie.cost_reporting.budget_line_items b ON p.project_id=b.project_id LEFT JOIN css_genie.cost_reporting.actual_costs ac ON p.project_id=ac.project_id WHERE p.status='active' GROUP BY p.project_name ORDER BY budget_m DESC"
-    },
-    {
-      "name": "co_by_type",
-      "displayName": "COs by Reason",
-      "query": "SELECT reason_code, COUNT(*) AS cnt, ROUND(SUM(amount)/1000000,2) AS total_m FROM css_genie.cost_reporting.change_orders WHERE status='approved' GROUP BY reason_code ORDER BY total_m DESC"
+      "queryLines": [
+        "SELECT p.project_name, ROUND(SUM(b.current_budget)/1000000,1) AS budget_m, ROUND(SUM(ac.amount)/1000000,1) AS actual_m FROM css_genie.project_tracking.projects p LEFT JOIN css_genie.cost_reporting.budget_line_items b ON p.project_id=b.project_id LEFT JOIN css_genie.cost_reporting.actual_costs ac ON p.project_id=ac.project_id WHERE p.status='active' GROUP BY p.project_name ORDER BY budget_m DESC"
+      ]
     },
     {
       "name": "co_by_proj",
       "displayName": "COs by Project",
-      "query": "SELECT p.project_name, ROUND(SUM(co.amount)/1000000,2) AS co_m FROM css_genie.cost_reporting.change_orders co JOIN css_genie.project_tracking.projects p ON co.project_id=p.project_id WHERE co.status='approved' GROUP BY p.project_name ORDER BY co_m DESC LIMIT 8"
+      "queryLines": [
+        "SELECT p.project_name, ROUND(SUM(co.amount)/1000000,2) AS co_m FROM css_genie.cost_reporting.change_orders co JOIN css_genie.project_tracking.projects p ON co.project_id=p.project_id WHERE co.status='approved' GROUP BY p.project_name ORDER BY co_m DESC LIMIT 8"
+      ]
     },
     {
-      "name": "vendor_spend",
-      "displayName": "Top Vendors",
-      "query": "SELECT vendor_name, ROUND(SUM(amount)/1000000,2) AS spend_m FROM css_genie.cost_reporting.actual_costs ac JOIN css_genie.project_tracking.projects p ON ac.project_id=p.project_id WHERE p.status='active' AND cost_type='sub' GROUP BY vendor_name ORDER BY spend_m DESC LIMIT 10"
+      "name": "co_reason",
+      "displayName": "COs by Reason",
+      "queryLines": [
+        "SELECT reason_code, ROUND(SUM(amount)/1000000,2) AS total_m FROM css_genie.cost_reporting.change_orders WHERE status='approved' GROUP BY reason_code ORDER BY total_m DESC"
+      ]
+    },
+    {
+      "name": "vendors",
+      "displayName": "Top Vendor Spend",
+      "queryLines": [
+        "SELECT vendor_name, ROUND(SUM(amount)/1000000,2) AS spend_m FROM css_genie.cost_reporting.actual_costs ac JOIN css_genie.project_tracking.projects p ON ac.project_id=p.project_id WHERE p.status='active' AND cost_type='sub' GROUP BY vendor_name ORDER BY spend_m DESC LIMIT 10"
+      ]
     }
   ],
   "pages": [
     {
       "name": "cost_reporting",
       "displayName": "Cost & Budget",
+      "pageType": "PAGE_TYPE_CANVAS",
       "layout": [
         {
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          },
           "widget": {
             "name": "kpi_bud",
             "title": "Total Budget ($M)",
@@ -85,15 +112,15 @@
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 0,
-            "width": 2,
-            "height": 3
           }
         },
         {
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          },
           "widget": {
             "name": "kpi_act",
             "title": "Total Actuals ($M)",
@@ -122,15 +149,15 @@
                 }
               }
             }
-          },
-          "position": {
-            "x": 2,
-            "y": 0,
-            "width": 2,
-            "height": 3
           }
         },
         {
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 1,
+            "height": 3
+          },
           "widget": {
             "name": "kpi_co",
             "title": "Approved COs ($M)",
@@ -159,15 +186,15 @@
                 }
               }
             }
-          },
-          "position": {
-            "x": 4,
-            "y": 0,
-            "width": 1,
-            "height": 3
           }
         },
         {
+          "position": {
+            "x": 5,
+            "y": 0,
+            "width": 1,
+            "height": 3
+          },
           "widget": {
             "name": "kpi_com",
             "title": "Committed ($M)",
@@ -196,23 +223,23 @@
                 }
               }
             }
-          },
-          "position": {
-            "x": 5,
-            "y": 0,
-            "width": 1,
-            "height": 3
           }
         },
         {
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 2,
+            "height": 6
+          },
           "widget": {
-            "name": "pie_cost",
+            "name": "pie_type",
             "title": "Actual Costs by Type",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "cost_by_type",
+                  "datasetName": "cost_type",
                   "fields": [
                     {
                       "name": "cost_type",
@@ -233,23 +260,23 @@
               "encodings": {
                 "label": {
                   "fieldName": "cost_type",
-                  "displayName": "cost_type"
+                  "displayName": "Cost Type"
                 },
                 "value": {
                   "fieldName": "total_m",
-                  "displayName": "total_m"
+                  "displayName": "Total M"
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 3,
-            "width": 2,
-            "height": 6
           }
         },
         {
+          "position": {
+            "x": 2,
+            "y": 3,
+            "width": 4,
+            "height": 6
+          },
           "widget": {
             "name": "line_burn",
             "title": "Monthly Spend Trend ($M) \u2014 Last 12 Months",
@@ -257,7 +284,7 @@
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "monthly_burn",
+                  "datasetName": "monthly",
                   "fields": [
                     {
                       "name": "month",
@@ -278,26 +305,26 @@
               "encodings": {
                 "x": {
                   "fieldName": "month",
-                  "displayName": "month",
+                  "displayName": "Month",
                   "scale": {
                     "type": "temporal"
                   }
                 },
                 "y": {
                   "fieldName": "spend_m",
-                  "displayName": "spend_m"
+                  "displayName": "Spend M"
                 }
               }
             }
-          },
-          "position": {
-            "x": 2,
-            "y": 3,
-            "width": 4,
-            "height": 6
           }
         },
         {
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 6,
+            "height": 6
+          },
           "widget": {
             "name": "bar_bva",
             "title": "Budget vs Actual by Project ($M)",
@@ -305,7 +332,7 @@
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "bva_by_proj",
+                  "datasetName": "bva",
                   "fields": [
                     {
                       "name": "project_name",
@@ -326,25 +353,25 @@
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "project_name"
+                  "displayName": "Project Name"
                 },
                 "y": {
                   "fieldName": "budget_m",
-                  "displayName": "budget_m"
+                  "displayName": "Budget M"
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 9,
-            "width": 6,
-            "height": 6
           }
         },
         {
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 4,
+            "height": 5
+          },
           "widget": {
-            "name": "bar_co_proj",
+            "name": "bar_co",
             "title": "Change Orders by Project ($M)",
             "queries": [
               {
@@ -371,31 +398,31 @@
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "project_name"
+                  "displayName": "Project Name"
                 },
                 "y": {
                   "fieldName": "co_m",
-                  "displayName": "co_m"
+                  "displayName": "Co M"
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 15,
-            "width": 4,
-            "height": 5
           }
         },
         {
+          "position": {
+            "x": 4,
+            "y": 15,
+            "width": 2,
+            "height": 5
+          },
           "widget": {
-            "name": "pie_co_type",
+            "name": "pie_co",
             "title": "Change Orders by Reason",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "co_by_type",
+                  "datasetName": "co_reason",
                   "fields": [
                     {
                       "name": "reason_code",
@@ -416,31 +443,31 @@
               "encodings": {
                 "label": {
                   "fieldName": "reason_code",
-                  "displayName": "reason_code"
+                  "displayName": "Reason Code"
                 },
                 "value": {
                   "fieldName": "total_m",
-                  "displayName": "total_m"
+                  "displayName": "Total M"
                 }
               }
             }
-          },
-          "position": {
-            "x": 4,
-            "y": 15,
-            "width": 2,
-            "height": 5
           }
         },
         {
+          "position": {
+            "x": 0,
+            "y": 20,
+            "width": 6,
+            "height": 6
+          },
           "widget": {
-            "name": "bar_vendors",
+            "name": "bar_vend",
             "title": "Top Subcontractor Spend ($M)",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "vendor_spend",
+                  "datasetName": "vendors",
                   "fields": [
                     {
                       "name": "vendor_name",
@@ -461,20 +488,14 @@
               "encodings": {
                 "x": {
                   "fieldName": "vendor_name",
-                  "displayName": "vendor_name"
+                  "displayName": "Vendor Name"
                 },
                 "y": {
                   "fieldName": "spend_m",
-                  "displayName": "spend_m"
+                  "displayName": "Spend M"
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 20,
-            "width": 6,
-            "height": 6
           }
         }
       ]

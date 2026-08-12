@@ -3,60 +3,87 @@
     {
       "name": "kpi_active",
       "displayName": "Active Projects",
-      "query": "SELECT COUNT(*) AS count FROM css_genie.project_tracking.projects WHERE status = 'active'"
+      "queryLines": [
+        "SELECT COUNT(*) AS count FROM css_genie.project_tracking.projects WHERE status = 'active'"
+      ]
     },
     {
       "name": "kpi_value",
-      "displayName": "Portfolio Value",
-      "query": "SELECT ROUND(SUM(contract_value)/1000000, 1) AS value_m FROM css_genie.project_tracking.projects WHERE status IN ('active','closeout')"
+      "displayName": "Portfolio Value $M",
+      "queryLines": [
+        "SELECT ROUND(SUM(contract_value)/1000000,1) AS value_m FROM css_genie.project_tracking.projects WHERE status IN ('active','closeout')"
+      ]
     },
     {
       "name": "kpi_rfis",
       "displayName": "Open RFIs",
-      "query": "SELECT COUNT(*) AS rfi_count FROM css_genie.project_tracking.rfis WHERE status = 'open'"
+      "queryLines": [
+        "SELECT COUNT(*) AS rfi_count FROM css_genie.project_tracking.rfis WHERE status = 'open'"
+      ]
     },
     {
-      "name": "kpi_submittals",
+      "name": "kpi_subs",
       "displayName": "Pending Submittals",
-      "query": "SELECT COUNT(*) AS sub_count FROM css_genie.project_tracking.submittals WHERE status IN ('pending','revise_resubmit')"
+      "queryLines": [
+        "SELECT COUNT(*) AS sub_count FROM css_genie.project_tracking.submittals WHERE status IN ('pending','revise_resubmit')"
+      ]
     },
     {
       "name": "value_by_type",
       "displayName": "Value by Type",
-      "query": "SELECT project_type, ROUND(SUM(contract_value)/1000000,1) AS value_m FROM css_genie.project_tracking.projects GROUP BY project_type ORDER BY value_m DESC"
+      "queryLines": [
+        "SELECT project_type, ROUND(SUM(contract_value)/1000000,1) AS value_m FROM css_genie.project_tracking.projects GROUP BY project_type ORDER BY value_m DESC"
+      ]
     },
     {
       "name": "status_split",
       "displayName": "Projects by Status",
-      "query": "SELECT status, COUNT(*) AS cnt FROM css_genie.project_tracking.projects GROUP BY status ORDER BY cnt DESC"
+      "queryLines": [
+        "SELECT status, COUNT(*) AS cnt FROM css_genie.project_tracking.projects GROUP BY status ORDER BY cnt DESC"
+      ]
     },
     {
       "name": "pct_complete",
-      "displayName": "% Complete by Project",
-      "query": "SELECT project_name, ROUND(percent_complete,1) AS pct_complete, contract_value, status FROM css_genie.project_tracking.projects WHERE status IN ('active','closeout') ORDER BY contract_value DESC LIMIT 12"
+      "displayName": "Pct Complete",
+      "queryLines": [
+        "SELECT project_name, ROUND(percent_complete,1) AS pct_complete FROM css_genie.project_tracking.projects WHERE status IN ('active','closeout') ORDER BY pct_complete DESC LIMIT 12"
+      ]
     },
     {
       "name": "rfi_by_proj",
-      "displayName": "Open RFIs by Project",
-      "query": "SELECT p.project_name, COUNT(r.rfi_id) AS open_rfis, MAX(r.days_open) AS max_days_open FROM css_genie.project_tracking.rfis r JOIN css_genie.project_tracking.projects p ON r.project_id = p.project_id WHERE r.status = 'open' GROUP BY p.project_name ORDER BY open_rfis DESC LIMIT 10"
-    },
-    {
-      "name": "projects_started",
-      "displayName": "Projects Started by Quarter",
-      "query": "SELECT date_format(date_trunc('quarter', start_date),'yyyy-Qq') AS quarter, COUNT(*) AS started, ROUND(SUM(contract_value)/1000000,1) AS value_m FROM css_genie.project_tracking.projects GROUP BY quarter ORDER BY quarter"
+      "displayName": "RFIs by Project",
+      "queryLines": [
+        "SELECT p.project_name, COUNT(r.rfi_id) AS open_rfis FROM css_genie.project_tracking.rfis r JOIN css_genie.project_tracking.projects p ON r.project_id=p.project_id WHERE r.status='open' GROUP BY p.project_name ORDER BY open_rfis DESC LIMIT 10"
+      ]
     },
     {
       "name": "rfi_aging",
-      "displayName": "RFI Aging Breakdown",
-      "query": "SELECT CASE WHEN days_open > 21 THEN 'Critical (>21d)' WHEN days_open >= 14 THEN 'High (14-21d)' WHEN days_open >= 7 THEN 'Elevated (7-13d)' ELSE 'Watch (<7d)' END AS urgency, COUNT(*) AS count FROM css_genie.project_tracking.rfis WHERE status = 'open' GROUP BY urgency ORDER BY count DESC"
+      "displayName": "RFI Age Buckets",
+      "queryLines": [
+        "SELECT CASE WHEN days_open>21 THEN 'Critical >21d' WHEN days_open>=14 THEN 'High 14-21d' WHEN days_open>=7 THEN 'Elevated 7-13d' ELSE 'Watch <7d' END AS urgency, COUNT(*) AS cnt FROM css_genie.project_tracking.rfis WHERE status='open' GROUP BY urgency ORDER BY cnt DESC"
+      ]
+    },
+    {
+      "name": "proj_started",
+      "displayName": "Projects Started by Qtr",
+      "queryLines": [
+        "SELECT date_format(date_trunc('quarter',start_date),'yyyy-Qq') AS quarter, COUNT(*) AS started FROM css_genie.project_tracking.projects GROUP BY quarter ORDER BY quarter"
+      ]
     }
   ],
   "pages": [
     {
       "name": "project_overview",
       "displayName": "Project Overview",
+      "pageType": "PAGE_TYPE_CANVAS",
       "layout": [
         {
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          },
           "widget": {
             "name": "c_active",
             "title": "Active Projects",
@@ -85,18 +112,18 @@
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 0,
-            "width": 2,
-            "height": 3
           }
         },
         {
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          },
           "widget": {
             "name": "c_value",
-            "title": "Portfolio Value $M",
+            "title": "Portfolio Value ($M)",
             "queries": [
               {
                 "name": "main_query",
@@ -118,19 +145,19 @@
               "encodings": {
                 "value": {
                   "fieldName": "value_m",
-                  "displayName": "Portfolio Value $M"
+                  "displayName": "Portfolio Value ($M)"
                 }
               }
             }
-          },
-          "position": {
-            "x": 2,
-            "y": 0,
-            "width": 2,
-            "height": 3
           }
         },
         {
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 1,
+            "height": 3
+          },
           "widget": {
             "name": "c_rfis",
             "title": "Open RFIs",
@@ -159,23 +186,23 @@
                 }
               }
             }
-          },
-          "position": {
-            "x": 4,
-            "y": 0,
-            "width": 1,
-            "height": 3
           }
         },
         {
+          "position": {
+            "x": 5,
+            "y": 0,
+            "width": 1,
+            "height": 3
+          },
           "widget": {
-            "name": "c_submittals",
+            "name": "c_subs",
             "title": "Pending Submittals",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "kpi_submittals",
+                  "datasetName": "kpi_subs",
                   "fields": [
                     {
                       "name": "sub_count",
@@ -196,15 +223,15 @@
                 }
               }
             }
-          },
-          "position": {
-            "x": 5,
-            "y": 0,
-            "width": 1,
-            "height": 3
           }
         },
         {
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 4,
+            "height": 6
+          },
           "widget": {
             "name": "bar_type",
             "title": "Contract Value by Project Type ($M)",
@@ -233,23 +260,23 @@
               "encodings": {
                 "x": {
                   "fieldName": "project_type",
-                  "displayName": "project_type"
+                  "displayName": "Project Type"
                 },
                 "y": {
                   "fieldName": "value_m",
-                  "displayName": "value_m"
+                  "displayName": "Value M"
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 3,
-            "width": 4,
-            "height": 6
           }
         },
         {
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 2,
+            "height": 6
+          },
           "widget": {
             "name": "pie_status",
             "title": "Portfolio Status Split",
@@ -278,23 +305,23 @@
               "encodings": {
                 "label": {
                   "fieldName": "status",
-                  "displayName": "status"
+                  "displayName": "Status"
                 },
                 "value": {
                   "fieldName": "cnt",
-                  "displayName": "cnt"
+                  "displayName": "Cnt"
                 }
               }
             }
-          },
-          "position": {
-            "x": 4,
-            "y": 3,
-            "width": 2,
-            "height": 6
           }
         },
         {
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 6,
+            "height": 5
+          },
           "widget": {
             "name": "bar_pct",
             "title": "% Complete by Project",
@@ -323,26 +350,26 @@
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "project_name"
+                  "displayName": "Project Name"
                 },
                 "y": {
                   "fieldName": "pct_complete",
-                  "displayName": "pct_complete"
+                  "displayName": "Pct Complete"
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 9,
-            "width": 6,
-            "height": 5
           }
         },
         {
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 4,
+            "height": 5
+          },
           "widget": {
             "name": "bar_rfis",
-            "title": "Open RFIs by Project (Top 10)",
+            "title": "Open RFIs by Project",
             "queries": [
               {
                 "name": "main_query",
@@ -368,25 +395,25 @@
               "encodings": {
                 "x": {
                   "fieldName": "project_name",
-                  "displayName": "project_name"
+                  "displayName": "Project Name"
                 },
                 "y": {
                   "fieldName": "open_rfis",
-                  "displayName": "open_rfis"
+                  "displayName": "Open Rfis"
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 14,
-            "width": 4,
-            "height": 5
           }
         },
         {
+          "position": {
+            "x": 4,
+            "y": 14,
+            "width": 2,
+            "height": 5
+          },
           "widget": {
-            "name": "pie_rfi_aging",
+            "name": "pie_rfi_age",
             "title": "RFI Age Distribution",
             "queries": [
               {
@@ -399,8 +426,8 @@
                       "expression": "`urgency`"
                     },
                     {
-                      "name": "count",
-                      "expression": "`count`"
+                      "name": "cnt",
+                      "expression": "`cnt`"
                     }
                   ],
                   "disaggregated": true
@@ -413,23 +440,23 @@
               "encodings": {
                 "label": {
                   "fieldName": "urgency",
-                  "displayName": "urgency"
+                  "displayName": "Urgency"
                 },
                 "value": {
-                  "fieldName": "count",
-                  "displayName": "count"
+                  "fieldName": "cnt",
+                  "displayName": "Cnt"
                 }
               }
             }
-          },
-          "position": {
-            "x": 4,
-            "y": 14,
-            "width": 2,
-            "height": 5
           }
         },
         {
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 6,
+            "height": 5
+          },
           "widget": {
             "name": "line_starts",
             "title": "Projects Started by Quarter",
@@ -437,15 +464,15 @@
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "projects_started",
+                  "datasetName": "proj_started",
                   "fields": [
                     {
                       "name": "quarter",
                       "expression": "`quarter`"
                     },
                     {
-                      "name": "value_m",
-                      "expression": "`value_m`"
+                      "name": "started",
+                      "expression": "`started`"
                     }
                   ],
                   "disaggregated": true
@@ -458,23 +485,17 @@
               "encodings": {
                 "x": {
                   "fieldName": "quarter",
-                  "displayName": "quarter",
+                  "displayName": "Quarter",
                   "scale": {
                     "type": "temporal"
                   }
                 },
                 "y": {
-                  "fieldName": "value_m",
-                  "displayName": "value_m"
+                  "fieldName": "started",
+                  "displayName": "Started"
                 }
               }
             }
-          },
-          "position": {
-            "x": 0,
-            "y": 19,
-            "width": 6,
-            "height": 5
           }
         }
       ]
