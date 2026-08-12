@@ -12,11 +12,11 @@ variables:
 
 targets:
   dev:
-    mode: development
     default: true
     workspace:
       host: https://adb-7405605962645785.5.azuredatabricks.net
       profile: css-genie-demo
+      root_path: /Shared/Huvibar-Construction-Demo/.bundle/${bundle.name}/${bundle.target}
 
   prod:
     mode: production

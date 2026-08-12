@@ -775,6 +775,9 @@ def select_project(n_clicks_list, id_list):
     ctx = callback_context
     if not ctx.triggered:
         return dash.no_update
+    # Ignore synthetic triggers from sidebar re-renders (n_clicks == 0)
+    if not ctx.triggered[0]["value"]:
+        return dash.no_update
     triggered_prop = ctx.triggered[0]["prop_id"]
     try:
         idx = json.loads(triggered_prop.split(".")[0])["index"]
