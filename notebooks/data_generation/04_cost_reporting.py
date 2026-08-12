@@ -1,5 +1,10 @@
 # Databricks notebook source
 
+# COMMAND ----------
+%pip install faker --quiet
+
+# COMMAND ----------
+
 import uuid
 import random
 import datetime

@@ -1,6 +1,11 @@
 # Databricks notebook source
 
 # COMMAND ----------
+%pip install faker --quiet
+
+# COMMAND ----------
+
+# COMMAND ----------
 dbutils.widgets.text("catalog", "css_genie")
 catalog = dbutils.widgets.get("catalog")
 print(f"Using catalog: {catalog}")

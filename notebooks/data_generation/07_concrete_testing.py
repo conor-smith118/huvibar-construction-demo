@@ -1,6 +1,11 @@
 # Databricks notebook source
 
 # COMMAND ----------
+%pip install faker --quiet
+
+# COMMAND ----------
+
+# COMMAND ----------
 
 import uuid
 import random
