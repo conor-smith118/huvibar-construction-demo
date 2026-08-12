@@ -8,7 +8,7 @@ variables:
     default: css_genie
   warehouse_id:
     description: SQL warehouse ID for dashboard & Genie deployment
-    default: f5a185ab7f9f1e9f
+    default: dd4b2d284ed5f3f6
 
 targets:
   dev:
